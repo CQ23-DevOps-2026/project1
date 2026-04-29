@@ -142,6 +142,26 @@ class OrderServiceTest {
     }
 
     @Test
+    void getAllOrder_EmptyPage_ReturnsEmptyOrderListVm() {
+        // Arrange
+        when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
+
+        // Act
+        OrderListVm result = orderService.getAllOrder(
+                Pair.of(ZonedDateTime.now(), ZonedDateTime.now()),
+                "product",
+                List.of(), // Empty order status branch
+                Pair.of("country", "phone"),
+                "email@test.com",
+                Pair.of(0, 10)
+        );
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.totalElements()).isZero();
+    }
+
+    @Test
     void getLatestOrders_ValidCount_ReturnsOrderBriefVms() {
         // Arrange
         when(orderRepository.getLatestOrders(any(Pageable.class))).thenReturn(List.of(order));
@@ -157,6 +177,18 @@ class OrderServiceTest {
     void getLatestOrders_InvalidCount_ReturnsEmptyList() {
         // Act
         List<OrderBriefVm> result = orderService.getLatestOrders(0);
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getLatestOrders_NoOrders_ReturnsEmptyList() {
+        // Arrange
+        when(orderRepository.getLatestOrders(any(Pageable.class))).thenReturn(Collections.emptyList());
+
+        // Act
+        List<OrderBriefVm> result = orderService.getLatestOrders(5);
 
         // Assert
         assertThat(result).isEmpty();
@@ -180,6 +212,24 @@ class OrderServiceTest {
         assertThat(result).isNotNull();
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PAID);
         verify(orderRepository).save(order);
+    }
+
+    @Test
+    void updateOrderPaymentStatus_PaymentPending_DoesNotUpdateOrderStatusToPaid() {
+        // Arrange
+        PaymentOrderStatusVm request = PaymentOrderStatusVm.builder()
+                .orderId(1L)
+                .paymentId(100L)
+                .paymentStatus("PENDING")
+                .build();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+
+        // Act
+        orderService.updateOrderPaymentStatus(request);
+
+        // Assert
+        assertThat(order.getOrderStatus()).isNotEqualTo(OrderStatus.PAID);
     }
 
     @Test
@@ -213,6 +263,21 @@ class OrderServiceTest {
         // Arrange
         setSubjectUpSecurityContext("user-id");
         when(productService.getProductVariations(10L)).thenReturn(List.of());
+        when(orderRepository.findOne(any(Specification.class))).thenReturn(Optional.of(order));
+
+        // Act
+        OrderExistsByProductAndUserGetVm result = orderService.isOrderCompletedWithUserIdAndProductId(10L);
+
+        // Assert
+        assertThat(result.isPresent()).isTrue();
+    }
+
+    @Test
+    void isOrderCompletedWithUserIdAndProductId_WithVariations_ReturnsVm() {
+        // Arrange
+        setSubjectUpSecurityContext("user-id");
+        ProductVariationVm variation = Instancio.create(ProductVariationVm.class);
+        when(productService.getProductVariations(10L)).thenReturn(List.of(variation));
         when(orderRepository.findOne(any(Specification.class))).thenReturn(Optional.of(order));
 
         // Act
