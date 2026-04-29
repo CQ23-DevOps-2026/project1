@@ -110,4 +110,10 @@ class CartItemMapperTest {
             assertThat(result).isEmpty();
         }
     }
+
+    @Test
+    void cartItemMapper_canBeInstantiated() {
+        CartItemMapper mapper = new CartItemMapper();
+        assertThat(mapper).isNotNull();
+    }
 }

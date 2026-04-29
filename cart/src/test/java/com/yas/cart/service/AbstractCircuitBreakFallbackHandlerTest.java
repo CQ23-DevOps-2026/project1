@@ -45,4 +45,34 @@ class AbstractCircuitBreakFallbackHandlerTest {
 
         assertThat(thrown).isSameAs(exception);
     }
+
+    @Test
+    void handleBodilessFallback_withCheckedException_shouldRethrow() {
+        TestHandler handler = new TestHandler();
+        Exception checkedException = new Exception("checked error");
+
+        Throwable thrown = null;
+        try {
+            handler.callBodiless(checkedException);
+        } catch (Throwable ex) {
+            thrown = ex;
+        }
+
+        assertThat(thrown).isSameAs(checkedException);
+    }
+
+    @Test
+    void handleTypedFallback_withCheckedException_shouldRethrow() {
+        TestHandler handler = new TestHandler();
+        Exception checkedException = new Exception("checked error");
+
+        Throwable thrown = null;
+        try {
+            handler.callTyped(checkedException);
+        } catch (Throwable ex) {
+            thrown = ex;
+        }
+
+        assertThat(thrown).isSameAs(checkedException);
+    }
 }

@@ -18,6 +18,11 @@ class DatabaseAutoConfigTest {
     }
 
     @Test
+    void databaseAutoConfig_canBeInstantiated() {
+        assertThat(config).isNotNull();
+    }
+
+    @Test
     void auditorAware_whenNoAuthentication_returnsEmptyString() {
         SecurityContextHolder.clearContext();
 
@@ -34,5 +39,10 @@ class DatabaseAutoConfigTest {
         Optional<String> auditor = config.auditorAware().getCurrentAuditor();
 
         assertThat(auditor).contains("user-1");
+    }
+
+    @Test
+    void auditorAware_shouldReturnNonNullBean() {
+        assertThat(config.auditorAware()).isNotNull();
     }
 }

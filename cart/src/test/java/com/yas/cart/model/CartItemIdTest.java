@@ -27,5 +27,17 @@ class CartItemIdTest {
         
         CartItemId different2 = new CartItemId("user-1", 11L);
         assertThat(first.equals(different2)).isFalse();
+        
+        // Test self equality
+        assertThat(first.equals(first)).isTrue();
+    }
+
+    @Test
+    void canEqual_shouldReturnTrueForSameType() {
+        CartItemId id1 = new CartItemId("user-1", 1L);
+        CartItemId id2 = new CartItemId("user-2", 2L);
+        assertThat(id1.canEqual(id2)).isTrue();
+        assertThat(id1.canEqual("not a CartItemId")).isFalse();
+        assertThat(id1.canEqual(null)).isFalse();
     }
 }
