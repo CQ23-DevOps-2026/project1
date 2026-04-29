@@ -145,4 +145,39 @@ class ProductAttributeServiceTest {
         ProductAttributePostVm vm = new ProductAttributePostVm("Duplicate Name", null);
         assertThrows(DuplicatedException.class, () -> productAttributeService.update(vm, 1L));
     }
+
+    // Update a product attribute that does not exist
+    @Test
+    void test_update_nonexistent_product_attribute() {
+        when(productAttributeRepository.findExistedName("Name", 999L)).thenReturn(null);
+        when(productAttributeRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ProductAttributePostVm vm = new ProductAttributePostVm("Name", null);
+        assertThrows(com.yas.commonlibrary.exception.NotFoundException.class,
+            () -> productAttributeService.update(vm, 999L));
+    }
+
+    // Save a product attribute with invalid group ID
+    @Test
+    void test_save_product_attribute_with_invalid_group_id() {
+        when(productAttributeRepository.findExistedName("Attr", null)).thenReturn(null);
+        when(productAttributeGroupRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ProductAttributePostVm vm = new ProductAttributePostVm("Attr", 999L);
+        assertThrows(com.yas.commonlibrary.exception.BadRequestException.class,
+            () -> productAttributeService.save(vm));
+    }
+
+    // Update a product attribute with invalid group ID
+    @Test
+    void test_update_product_attribute_with_invalid_group_id() {
+        ProductAttribute existingAttr = new ProductAttribute(1L, "Attr", null, null, null);
+        when(productAttributeRepository.findExistedName("Attr", 1L)).thenReturn(null);
+        when(productAttributeRepository.findById(1L)).thenReturn(Optional.of(existingAttr));
+        when(productAttributeGroupRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ProductAttributePostVm vm = new ProductAttributePostVm("Attr", 999L);
+        assertThrows(com.yas.commonlibrary.exception.BadRequestException.class,
+            () -> productAttributeService.update(vm, 1L));
+    }
 }
