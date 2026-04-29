@@ -1175,5 +1175,156 @@ class ProductServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
+    // ========== updateProduct - duplicate variations ==========
+    @Test
+    void updateProduct_WithDuplicateVariationSku_ShouldThrow() {
+        ProductVariationPutVm var1 = new ProductVariationPutVm(
+            null, "Var1", "var1", "DUPE-SKU", "GTIN1", 50.0, null, List.of(), Map.of()
+        );
+        ProductVariationPutVm var2 = new ProductVariationPutVm(
+            null, "Var2", "var2", "DUPE-SKU", "GTIN2", 50.0, null, List.of(), Map.of()
+        );
+
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            null, List.of(), "s", "d", "sp", "SKU-MAIN", "GTIN-MAIN",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(),
+            List.of(var1, var2), List.of(), Collections.emptyList(),
+            List.of(), null
+        );
+
+        product.setProducts(new ArrayList<>());
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
+        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-MAIN")).thenReturn(Optional.empty());
+        when(productRepository.findBySkuAndIsPublishedTrue("SKU-MAIN")).thenReturn(Optional.empty());
+
+        assertThrows(DuplicatedException.class, () -> productService.updateProduct(1L, putVm));
+    }
+
+    @Test
+    void updateProduct_WithDuplicateVariationSlug_ShouldThrow() {
+        ProductVariationPutVm var1 = new ProductVariationPutVm(
+            null, "Var1", "DUPE-SLUG", "SKU1", "GTIN1", 50.0, null, List.of(), Map.of()
+        );
+        ProductVariationPutVm var2 = new ProductVariationPutVm(
+            null, "Var2", "DUPE-SLUG", "SKU2", "GTIN2", 50.0, null, List.of(), Map.of()
+        );
+
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            null, List.of(), "s", "d", "sp", "SKU-MAIN", "GTIN-MAIN",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(),
+            List.of(var1, var2), List.of(), Collections.emptyList(),
+            List.of(), null
+        );
+
+        product.setProducts(new ArrayList<>());
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
+        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-MAIN")).thenReturn(Optional.empty());
+        when(productRepository.findBySkuAndIsPublishedTrue("SKU-MAIN")).thenReturn(Optional.empty());
+
+        assertThrows(DuplicatedException.class, () -> productService.updateProduct(1L, putVm));
+    }
+
+    // ========== updateProduct - not found ==========
+    @Test
+    void updateProduct_NotFound_ShouldThrow() {
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            null, List.of(), "s", "d", "sp", "SKU", "GTIN",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(),
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            List.of(), null
+        );
+
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> productService.updateProduct(999L, putVm));
+    }
+
+    // ========== updateProduct - success without variations ==========
+    @Test
+    void updateProduct_SuccessWithoutVariations() {
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            1L, List.of(1L), "s", "d", "sp", "SKU-UP", "GTIN-UP",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(10L, 20L),
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            List.of(2L), null
+        );
+
+        product.setProducts(new ArrayList<>());
+        product.setProductImages(new ArrayList<>());
+        product.setProductCategories(new ArrayList<>());
+        product.setRelatedProducts(new ArrayList<>());
+
+        Product relatedProduct = Product.builder().id(2L).build();
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
+        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-UP")).thenReturn(Optional.empty());
+        when(productRepository.findBySkuAndIsPublishedTrue("SKU-UP")).thenReturn(Optional.empty());
+        when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
+        when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
+        when(productRepository.findAllById(List.of(2L))).thenReturn(List.of(relatedProduct));
+
+        productService.updateProduct(1L, putVm);
+
+        verify(productRepository).save(product);
+        assertEquals("Updated", product.getName());
+    }
+
+    // ========== updateProduct - with new variation and missing option value ==========
+    @Test
+    void updateProduct_WithVariation_MissingOptionValue_ShouldThrow() {
+        ProductOptionValuePutVm optValVm = new ProductOptionValuePutVm(1L, "Red");
+        ProductVariationPutVm varVm = new ProductVariationPutVm(
+            null, "Var1", "var1", "V-SKU", "V-GTIN", 50.0, 11L, List.of(), Map.of(1L, "Blue")
+        );
+
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            null, List.of(), "s", "d", "sp", "SKU-UP2", "GTIN-UP2",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(),
+            List.of(varVm), List.of(optValVm), Collections.emptyList(),
+            List.of(), null
+        );
+
+        product.setProducts(new ArrayList<>());
+        product.setProductImages(new ArrayList<>());
+        product.setProductCategories(new ArrayList<>());
+        product.setRelatedProducts(new ArrayList<>());
+
+        ProductOption opt = new ProductOption();
+        opt.setId(1L);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
+        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-UP2")).thenReturn(Optional.empty());
+        when(productRepository.findBySkuAndIsPublishedTrue("SKU-UP2")).thenReturn(Optional.empty());
+
+        when(productOptionRepository.findAllByIdIn(List.of(1L))).thenReturn(List.of(opt));
+        
+        // Return saved variation
+        Product savedVar = Product.builder().id(3L).slug("var1").build();
+        when(productRepository.saveAll(anyList())).thenAnswer(inv -> {
+            List<Product> list = inv.getArgument(0);
+            if (!list.isEmpty() && "var1".equals(list.get(0).getSlug())) {
+                return List.of(savedVar);
+            }
+            return list;
+        });
+
+        // This will throw because the option value "Blue" is mapped but productOptionValueDisplays doesn't have it
+        assertThrows(BadRequestException.class, () -> productService.updateProduct(1L, putVm));
+    }
 }
 
