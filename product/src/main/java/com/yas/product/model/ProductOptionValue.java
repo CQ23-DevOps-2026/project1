@@ -1,5 +1,6 @@
 package com.yas.product.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,6 +38,7 @@ public class ProductOptionValue {
 
     private int displayOrder;
 
+    @Column(name = "\"value\"")
     private String value;
 
     @Override

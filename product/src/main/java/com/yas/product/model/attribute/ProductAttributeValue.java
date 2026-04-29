@@ -1,6 +1,7 @@
 package com.yas.product.model.attribute;
 
 import com.yas.product.model.Product;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,5 +29,6 @@ public class ProductAttributeValue {
     @JoinColumn(name = "product_attribute_id", nullable = false)
     private ProductAttribute productAttribute;
 
+    @Column(name = "\"value\"")
     private String value;
 }
