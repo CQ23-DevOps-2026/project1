@@ -1291,6 +1291,7 @@ class ProductServiceTest {
         when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
         when(productRepository.findByGtinAndIsPublishedTrue("GTIN-UP")).thenReturn(Optional.empty());
         when(productRepository.findBySkuAndIsPublishedTrue("SKU-UP")).thenReturn(Optional.empty());
+        when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
         when(productOptionRepository.findAllByIdIn(anyList())).thenReturn(List.of(opt));
         
         // Mock saveAll to return the variations and option values being saved
