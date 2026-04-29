@@ -1243,15 +1243,38 @@ class ProductServiceTest {
         assertThrows(NotFoundException.class, () -> productService.updateProduct(999L, putVm));
     }
 
-    // ========== updateProduct - success without variations ==========
+    // ========== updateProduct - empty options ==========
     @Test
-    void updateProduct_SuccessWithoutVariations() {
+    void updateProduct_EmptyOptions_ShouldThrow() {
+        ProductPutVm putVm = new ProductPutVm(
+            "Updated", "updated", 99.0, true, true, false, true, false,
+            null, List.of(), "s", "d", "sp", "SKU", "GTIN",
+            1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
+            null, null, null, null, List.of(),
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            List.of(), null
+        );
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        assertThrows(BadRequestException.class, () -> productService.updateProduct(1L, putVm));
+    }
+
+    // ========== updateProduct - success ==========
+    @Test
+    void updateProduct_Success() {
+        ProductOptionValuePutVm optValVm = new ProductOptionValuePutVm(1L, "Text", 1, List.of("Red"));
+        ProductVariationPutVm varVm = new ProductVariationPutVm(
+            null, "Var1", "var1", "V-SKU", "V-GTIN", 50.0, 11L, List.of(), Map.of(1L, "Red")
+        );
+
         ProductPutVm putVm = new ProductPutVm(
             "Updated", "updated", 99.0, true, true, false, true, false,
             1L, List.of(1L), "s", "d", "sp", "SKU-UP", "GTIN-UP",
             1.0, DimensionUnit.CM, 10.0, 5.0, 3.0,
             null, null, null, null, List.of(10L, 20L),
-            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            List.of(varVm), List.of(optValVm), List.of(new ProductOptionValueDisplay(1L, "Text", 1, "Red")),
             List.of(2L), null
         );
 
@@ -1261,6 +1284,8 @@ class ProductServiceTest {
         product.setRelatedProducts(new ArrayList<>());
 
         Product relatedProduct = Product.builder().id(2L).build();
+        ProductOption opt = new ProductOption();
+        opt.setId(1L);
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
@@ -1268,6 +1293,8 @@ class ProductServiceTest {
         when(productRepository.findBySkuAndIsPublishedTrue("SKU-UP")).thenReturn(Optional.empty());
         when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
         when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
+        when(productOptionRepository.findAllByIdIn(anyList())).thenReturn(List.of(opt));
+        
         lenient().when(productRepository.findAllById(anyCollection())).thenAnswer(inv -> {
             Iterable<Long> ids = inv.getArgument(0);
             for (Long id : ids) {
