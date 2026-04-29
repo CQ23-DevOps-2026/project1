@@ -146,9 +146,12 @@ pipeline {
                             def sourcePatterns = services.collect { "${it}/src/main/java" }.join(',')
 
                             jacoco(
-                                execPattern:   execPatterns,
-                                classPattern:  classPatterns,
-                                sourcePattern: sourcePatterns
+                                execPattern:        execPatterns,
+                                classPattern:       classPatterns,
+                                sourcePattern:      sourcePatterns,
+                                // ── Req: fail build nếu line coverage < 70% ──
+                                minimumLineCoverage: '70',
+                                changeBuildStatus:   true
                             )
                         }
                     }
