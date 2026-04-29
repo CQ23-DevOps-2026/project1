@@ -1,8 +1,11 @@
 package com.yas.location.controller;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
@@ -13,7 +16,11 @@ import com.yas.location.model.Country;
 import com.yas.location.model.StateOrProvince;
 import com.yas.location.service.StateOrProvinceService;
 import com.yas.location.utils.Constants;
+import com.yas.location.viewmodel.stateorprovince.StateOrProvinceAndCountryGetNameVm;
+import com.yas.location.viewmodel.stateorprovince.StateOrProvinceListGetVm;
 import com.yas.location.viewmodel.stateorprovince.StateOrProvincePostVm;
+import com.yas.location.viewmodel.stateorprovince.StateOrProvinceVm;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -148,5 +155,55 @@ class StateOrProvinceControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(request))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetPageableStateOrProvinces_whenNormalCase_thenReturnOk() throws Exception {
+        StateOrProvinceListGetVm response = new StateOrProvinceListGetVm(List.of(), 0, 10, 0, 0, true);
+        given(stateOrProvinceService.getPageableStateOrProvinces(0, 10, 1L)).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.STATE_OR_PROVINCES_URL + "/paging")
+                .param("countryId", "1"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testGetAllByCountryId_whenNormalCase_thenReturnOk() throws Exception {
+        List<StateOrProvinceVm> response = List.of(new StateOrProvinceVm(1L, "HCM", "SG", "city", 1L));
+        given(stateOrProvinceService.getAllByCountryId(1L)).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.STATE_OR_PROVINCES_URL)
+                .param("countryId", "1"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testGetStateOrProvince_whenNormalCase_thenReturnOk() throws Exception {
+        StateOrProvinceVm response = new StateOrProvinceVm(1L, "HCM", "SG", "city", 1L);
+        given(stateOrProvinceService.findById(1L)).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.STATE_OR_PROVINCES_URL + "/1"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testGetStateOrProvinceAndCountryNames_whenNormalCase_thenReturnOk() throws Exception {
+        List<StateOrProvinceAndCountryGetNameVm> response =
+            List.of(new StateOrProvinceAndCountryGetNameVm(1L, "HCM", "Vietnam"));
+        given(stateOrProvinceService.getStateOrProvinceAndCountryNames(List.of(1L, 2L))).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.STATE_OR_PROVINCES_URL + "/state-country-names")
+                .param("stateOrProvinceIds", "1", "2"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testDeleteStateOrProvince_whenNormalCase_thenReturnNoContent() throws Exception {
+        mockMvc.perform(delete(Constants.ApiConstant.STATE_OR_PROVINCES_URL + "/1"))
+            .andExpect(status().isNoContent());
     }
 }
