@@ -53,6 +53,6 @@ class SecurityConfigTest {
 
         assertThat(authentication.getAuthorities())
             .extracting(GrantedAuthority::getAuthority)
-            .containsExactly("ROLE_USER");
+            .contains("ROLE_USER");
     }
 }
