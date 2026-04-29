@@ -95,4 +95,12 @@ class CartViewModelTest {
         assertThat(thumbVm1.hashCode()).isEqualTo(thumbVm2.hashCode());
         assertThat(thumbVm1.toString()).contains("name");
     }
+
+    @Test
+    void builder_toString_shouldWork() {
+        assertThat(CartItemPostVm.builder().productId(1L).toString()).contains("1");
+        assertThat(CartItemDeleteVm.builder().productId(1L).toString()).contains("1");
+        assertThat(CartItemGetVm.builder().productId(1L).toString()).contains("1");
+        assertThat(ProductThumbnailVm.builder().id(1L).toString()).contains("1");
+    }
 }

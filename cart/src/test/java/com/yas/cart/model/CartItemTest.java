@@ -38,4 +38,14 @@ class CartItemTest {
         assertThat(item2.getProductId()).isEqualTo(2L);
         assertThat(item2.getQuantity()).isEqualTo(3);
     }
+
+    @Test
+    void builder_toString_shouldWork() {
+        String builderString = CartItem.builder()
+            .customerId("c1")
+            .productId(1L)
+            .quantity(2)
+            .toString();
+        assertThat(builderString).contains("c1");
+    }
 }
