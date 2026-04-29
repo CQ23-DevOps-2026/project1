@@ -89,6 +89,28 @@ class ProductServiceTest {
 
             assertThat(result).isEmpty();
         }
+
+        @Test
+        void getProducts_WhenResponseBodyIsNull_ReturnNull() {
+            List<Long> ids = List.of(1L);
+            URI url = UriComponentsBuilder
+                .fromUriString(BASE_URL)
+                .path("/storefront/products/list-featured")
+                .queryParam("productId", ids)
+                .build()
+                .toUri();
+
+            when(serviceUrlConfig.product()).thenReturn(BASE_URL);
+            when(restClient.get()).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.toEntity(new ParameterizedTypeReference<List<ProductThumbnailVm>>() {}))
+                .thenReturn(ResponseEntity.ok().build());
+
+            List<ProductThumbnailVm> result = productService.getProducts(ids);
+
+            assertThat(result).isNull();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -145,6 +167,29 @@ class ProductServiceTest {
 
             assertThat(result).isNull();
         }
+
+        @Test
+        void getProductById_WhenResponseBodyIsNull_ReturnNull() {
+            Long id = 123L;
+            List<Long> ids = List.of(id);
+            URI url = UriComponentsBuilder
+                .fromUriString(BASE_URL)
+                .path("/storefront/products/list-featured")
+                .queryParam("productId", ids)
+                .build()
+                .toUri();
+
+            when(serviceUrlConfig.product()).thenReturn(BASE_URL);
+            when(restClient.get()).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.toEntity(new ParameterizedTypeReference<List<ProductThumbnailVm>>() {}))
+                .thenReturn(ResponseEntity.ok().build());
+
+            ProductThumbnailVm result = productService.getProductById(id);
+
+            assertThat(result).isNull();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -191,6 +236,27 @@ class ProductServiceTest {
             when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.toEntity(new ParameterizedTypeReference<List<ProductThumbnailVm>>() {}))
                 .thenReturn(ResponseEntity.ok(Collections.emptyList()));
+
+            assertThat(productService.existsById(id)).isFalse();
+        }
+
+        @Test
+        void existsById_WhenResponseBodyIsNull_ReturnFalse() {
+            Long id = 123L;
+            List<Long> ids = List.of(id);
+            URI url = UriComponentsBuilder
+                .fromUriString(BASE_URL)
+                .path("/storefront/products/list-featured")
+                .queryParam("productId", ids)
+                .build()
+                .toUri();
+
+            when(serviceUrlConfig.product()).thenReturn(BASE_URL);
+            when(restClient.get()).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+            when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.toEntity(new ParameterizedTypeReference<List<ProductThumbnailVm>>() {}))
+                .thenReturn(ResponseEntity.ok().build());
 
             assertThat(productService.existsById(id)).isFalse();
         }

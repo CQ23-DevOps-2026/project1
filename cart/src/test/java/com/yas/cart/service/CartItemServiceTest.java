@@ -193,6 +193,18 @@ class CartItemServiceTest {
             verify(cartItemRepository).findByCustomerIdOrderByCreatedOnDesc(CURRENT_USER_ID_SAMPLE);
             assertEquals(existingCartItems.size(), cartItemGetVms.size());
         }
+
+        @Test
+        void testGetCartItems_whenEmpty_shouldReturnEmptyList() {
+            when(cartItemRepository.findByCustomerIdOrderByCreatedOnDesc(CURRENT_USER_ID_SAMPLE))
+                .thenReturn(List.of());
+            mockCurrentUserId(CURRENT_USER_ID_SAMPLE);
+
+            List<CartItemGetVm> cartItemGetVms = cartItemService.getCartItems();
+
+            verify(cartItemRepository).findByCustomerIdOrderByCreatedOnDesc(CURRENT_USER_ID_SAMPLE);
+            assertTrue(cartItemGetVms.isEmpty());
+        }
     }
 
     @Nested
@@ -333,6 +345,37 @@ class CartItemServiceTest {
             verify(cartItemRepository).deleteAll(List.of(existingCartItem));
             verify(cartItemRepository, never()).saveAll(List.of(existingCartItem));
             assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void testDeleteOrAdjust_whenMixDeleteAndAdjust_shouldReturnAdjustedItems() {
+            CartItem deleteItem = CartItem.builder()
+                .customerId(CURRENT_USER_ID_SAMPLE)
+                .productId(1L)
+                .quantity(2)
+                .build();
+            CartItem adjustItem = CartItem.builder()
+                .customerId(CURRENT_USER_ID_SAMPLE)
+                .productId(2L)
+                .quantity(5)
+                .build();
+            List<CartItemDeleteVm> cartItemDeleteVms = List.of(
+                new CartItemDeleteVm(deleteItem.getProductId(), 2),
+                new CartItemDeleteVm(adjustItem.getProductId(), 2)
+            );
+
+            mockCurrentUserId(CURRENT_USER_ID_SAMPLE);
+            when(cartItemRepository.findByCustomerIdAndProductIdIn(any(), any()))
+                .thenReturn(List.of(deleteItem, adjustItem));
+            when(cartItemRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+            List<CartItemGetVm> result = cartItemService.deleteOrAdjustCartItem(cartItemDeleteVms);
+
+            verify(cartItemRepository).deleteAll(List.of(deleteItem));
+            verify(cartItemRepository).saveAll(List.of(adjustItem));
+            assertEquals(1, result.size());
+            assertEquals(3, result.getFirst().quantity());
+            assertEquals(adjustItem.getProductId(), result.getFirst().productId());
         }
     }
 
