@@ -1295,6 +1295,9 @@ class ProductServiceTest {
         when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
         when(productOptionRepository.findAllByIdIn(anyList())).thenReturn(List.of(opt));
         
+        // Mock saveAll to return the variations being saved
+        when(productRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        
         lenient().when(productRepository.findAllById(anyCollection())).thenAnswer(inv -> {
             Iterable<Long> ids = inv.getArgument(0);
             for (Long id : ids) {
