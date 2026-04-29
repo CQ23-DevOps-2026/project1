@@ -48,4 +48,38 @@ class OrderMapperTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getPhone()).isEqualTo("123456789");
     }
+
+    @Test
+    void toCsv_NullOrderBriefVm_ReturnsNull() {
+        // Act
+        OrderItemCsv result = orderMapper.toCsv(null);
+
+        // Assert
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void toCsv_NullBillingAddressVm_ReturnsOrderItemCsvWithNullPhone() {
+        // Arrange
+        OrderBriefVm orderBriefVm = new OrderBriefVm(
+                1L,
+                "customer@test.com",
+                null,
+                new BigDecimal("100.00"),
+                null,
+                null,
+                null,
+                null,
+                ZonedDateTime.now()
+        );
+
+        // Act
+        OrderItemCsv result = orderMapper.toCsv(orderBriefVm);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getPhone()).isNull();
+    }
 }
+
