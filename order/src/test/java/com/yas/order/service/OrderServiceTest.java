@@ -218,7 +218,7 @@ class OrderServiceTest {
         OrderExistsByProductAndUserGetVm result = orderService.isOrderCompletedWithUserIdAndProductId(10L);
 
         // Assert
-        assertThat(result.isCompleted()).isTrue();
+        assertThat(result.isPresent()).isTrue();
     }
 
     @Test
@@ -275,7 +275,7 @@ class OrderServiceTest {
         OrderRequest request = new OrderRequest();
         Page<Order> orderPage = new PageImpl<>(List.of(order));
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(orderPage);
-        when(orderMapper.toCsv(any(OrderBriefVm.class))).thenReturn(new com.yas.order.model.csv.OrderItemCsv());
+        when(orderMapper.toCsv(any(OrderBriefVm.class))).thenReturn(Instancio.create(com.yas.order.model.csv.OrderItemCsv.class));
 
         // Act
         byte[] result = orderService.exportCsv(request);

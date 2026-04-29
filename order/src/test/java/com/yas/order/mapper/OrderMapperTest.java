@@ -30,15 +30,14 @@ class OrderMapperTest {
         
         OrderBriefVm orderBriefVm = new OrderBriefVm(
                 1L,
-                "customer-id",
                 "customer@test.com",
-                null,
                 billingAddress,
-                ZonedDateTime.now(),
                 new BigDecimal("100.00"),
                 null,
                 null,
-                null
+                null,
+                null,
+                ZonedDateTime.now()
         );
 
         // Act
