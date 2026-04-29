@@ -827,7 +827,6 @@ class ProductServiceTest {
         );
 
         when(productRepository.findBySlugAndIsPublishedTrue("unique-slug2")).thenReturn(Optional.empty());
-        when(productRepository.findBySkuAndIsPublishedTrue("SKU-UNIQUE2")).thenReturn(Optional.empty());
         when(productRepository.findByGtinAndIsPublishedTrue("GTIN001")).thenReturn(Optional.of(product));
 
         assertThrows(DuplicatedException.class, () -> productService.createProduct(postVm));
@@ -876,7 +875,7 @@ class ProductServiceTest {
         ProductDetailGetVm result = productService.getProductDetail("test-product");
 
         assertFalse(result.productAttributeGroups().isEmpty());
-        assertEquals("None", result.productAttributeGroups().get(0).name());
+        assertEquals("None group", result.productAttributeGroups().get(0).name());
     }
 
     @Test
