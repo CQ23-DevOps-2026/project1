@@ -535,4 +535,191 @@ class ProductServiceTest {
         assertNotNull(result);
         assertEquals(1, result.productCheckoutListVms().size());
     }
+
+    @Test
+    void getProductCheckoutList_EmptyThumbnail() {
+        NoFileMediaVm emptyMedia = new NoFileMediaVm(1L, "", "", "", "");
+        Page<Product> page = new PageImpl<>(List.of(product));
+        when(productRepository.findAllPublishedProductsByIds(anyList(), any(Pageable.class))).thenReturn(page);
+        when(mediaService.getMedia(1L)).thenReturn(emptyMedia);
+
+        ProductGetCheckoutListVm result = productService.getProductCheckoutList(0, 10, List.of(1L));
+
+        assertNotNull(result);
+        assertEquals(1, result.productCheckoutListVms().size());
+    }
+
+    // ========== getProductDetail (by slug) ==========
+    @Test
+    void getProductDetail_WhenSlugExists_ShouldReturnDetail() {
+        product.setProductImages(List.of());
+        product.setAttributeValues(List.of());
+        when(productRepository.findBySlugAndIsPublishedTrue("test-product")).thenReturn(Optional.of(product));
+        when(mediaService.getMedia(1L)).thenReturn(noFileMediaVm);
+
+        ProductDetailGetVm result = productService.getProductDetail("test-product");
+
+        assertNotNull(result);
+        assertEquals("Test Product", result.name());
+    }
+
+    @Test
+    void getProductDetail_WhenSlugNotFound_ShouldThrow() {
+        when(productRepository.findBySlugAndIsPublishedTrue("not-exist")).thenReturn(Optional.empty());
+        assertThrows(NotFoundException.class, () -> productService.getProductDetail("not-exist"));
+    }
+
+    @Test
+    void getProductDetail_NoBrand_ShouldReturnNullBrand() {
+        product.setBrand(null);
+        product.setProductImages(List.of());
+        product.setAttributeValues(List.of());
+        when(productRepository.findBySlugAndIsPublishedTrue("test-product")).thenReturn(Optional.of(product));
+        when(mediaService.getMedia(1L)).thenReturn(noFileMediaVm);
+
+        ProductDetailGetVm result = productService.getProductDetail("test-product");
+
+        assertNull(result.brandName());
+    }
+
+    // ========== deleteProduct - empty combinations ==========
+    @Test
+    void deleteProduct_WithParent_EmptyCombinations() {
+        Product parent = Product.builder().id(2L).name("Parent").build();
+        product.setParent(parent);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productOptionCombinationRepository.findAllByProduct(product)).thenReturn(Collections.emptyList());
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        productService.deleteProduct(1L);
+
+        verify(productOptionCombinationRepository, never()).deleteAll(anyList());
+        assertFalse(product.isPublished());
+    }
+
+    // ========== subtractStockQuantity - tracking disabled ==========
+    @Test
+    void subtractStockQuantity_TrackingDisabled_ShouldNotChange() {
+        product.setStockQuantity(50L);
+        product.setStockTrackingEnabled(false);
+        ProductQuantityPutVm qVm = new ProductQuantityPutVm(1L, 10L);
+        when(productRepository.findAllByIdIn(anyList())).thenReturn(List.of(product));
+
+        productService.subtractStockQuantity(List.of(qVm));
+
+        assertEquals(50L, product.getStockQuantity());
+    }
+
+    // ========== restoreStockQuantity - tracking disabled ==========
+    @Test
+    void restoreStockQuantity_TrackingDisabled_ShouldNotChange() {
+        product.setStockQuantity(50L);
+        product.setStockTrackingEnabled(false);
+        ProductQuantityPutVm qVm = new ProductQuantityPutVm(1L, 10L);
+        when(productRepository.findAllByIdIn(anyList())).thenReturn(List.of(product));
+
+        productService.restoreStockQuantity(List.of(qVm));
+
+        assertEquals(50L, product.getStockQuantity());
+    }
+
+    // ========== getRelatedProductsStorefront - with data ==========
+    @Test
+    void getRelatedProductsStorefront_WhenExists_ShouldReturnPublishedOnly() {
+        Product relatedPub = Product.builder().id(2L).name("Published Related").slug("pub-rel")
+            .isPublished(true).thumbnailMediaId(2L).price(50.0).build();
+        ProductRelated pr = ProductRelated.builder().product(product).relatedProduct(relatedPub).build();
+        Page<ProductRelated> page = new PageImpl<>(List.of(pr));
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRelatedRepository.findAllByProduct(eq(product), any(Pageable.class))).thenReturn(page);
+        when(mediaService.getMedia(2L)).thenReturn(noFileMediaVm);
+
+        ProductsGetVm result = productService.getRelatedProductsStorefront(1L, 0, 10);
+
+        assertEquals(1, result.productContent().size());
+    }
+
+    // ========== getProductsByMultiQuery - empty ==========
+    @Test
+    void getProductsByMultiQuery_EmptyResult() {
+        Page<Product> page = new PageImpl<>(Collections.emptyList());
+        when(productRepository.findByProductNameAndCategorySlugAndPriceBetween(
+            anyString(), anyString(), any(), any(), any(Pageable.class))).thenReturn(page);
+
+        ProductsGetVm result = productService.getProductsByMultiQuery(0, 10, "none", "", null, null);
+
+        assertTrue(result.productContent().isEmpty());
+    }
+
+    // ========== getProductByIds - empty ==========
+    @Test
+    void getProductByIds_EmptyList_ShouldReturnEmpty() {
+        when(productRepository.findAllByIdIn(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        List<ProductListVm> result = productService.getProductByIds(Collections.emptyList());
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ========== setProductImages ==========
+    @Test
+    void setProductImages_NullImageIds_ShouldClearImages() {
+        List<ProductImage> result = productService.setProductImages(null, product);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void setProductImages_EmptyImageIds_ShouldClearImages() {
+        List<ProductImage> result = productService.setProductImages(Collections.emptyList(), product);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void setProductImages_NewProduct_NullExistingImages() {
+        product.setProductImages(null);
+        List<Long> imageIds = List.of(10L, 20L);
+
+        List<ProductImage> result = productService.setProductImages(imageIds, product);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void setProductImages_ExistingProduct_AddNew() {
+        ProductImage existing = ProductImage.builder().imageId(10L).product(product).build();
+        product.setProductImages(List.of(existing));
+        List<Long> imageIds = List.of(10L, 20L);
+
+        List<ProductImage> result = productService.setProductImages(imageIds, product);
+
+        assertEquals(1, result.size()); // only new image 20L
+    }
+
+    // ========== getFeaturedProductsById - with parent fallback ==========
+    @Test
+    void getFeaturedProductsById_EmptyThumbnail_WithParent() {
+        NoFileMediaVm emptyThumb = new NoFileMediaVm(1L, "", "", "", "");
+        Product parent = Product.builder().id(2L).name("Parent").thumbnailMediaId(20L).build();
+        product.setParent(parent);
+
+        when(productRepository.findAllByIdIn(List.of(1L))).thenReturn(List.of(product));
+        when(mediaService.getMedia(1L)).thenReturn(emptyThumb);
+        when(productRepository.findById(2L)).thenReturn(Optional.of(parent));
+        when(mediaService.getMedia(20L)).thenReturn(noFileMediaVm);
+
+        List<ProductThumbnailGetVm> result = productService.getFeaturedProductsById(List.of(1L));
+
+        assertEquals(1, result.size());
+    }
+
+    // ========== exportProducts - empty ==========
+    @Test
+    void exportProducts_EmptyResult() {
+        when(productRepository.getExportingProducts(anyString(), anyString())).thenReturn(Collections.emptyList());
+
+        List<ProductExportingDetailVm> result = productService.exportProducts("none", "none");
+
+        assertTrue(result.isEmpty());
+    }
 }
