@@ -266,6 +266,7 @@ class OrderServiceTest {
         request.setBillingCountry("Vietnam");
         request.setBillingPhoneNumber("0123456789");
         request.setPageSize(10);
+        request.setOrderStatus(List.of());
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
         // Act
@@ -284,6 +285,7 @@ class OrderServiceTest {
         request.setBillingCountry("Vietnam");
         request.setBillingPhoneNumber("0123456789");
         request.setPageSize(10);
+        request.setOrderStatus(List.of());
         Page<Order> orderPage = new PageImpl<>(List.of(order));
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(orderPage);
         when(orderMapper.toCsv(any(OrderBriefVm.class))).thenReturn(Instancio.create(com.yas.order.model.csv.OrderItemCsv.class));
