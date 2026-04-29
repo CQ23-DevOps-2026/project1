@@ -55,4 +55,17 @@ class SecurityConfigTest {
             .extracting(GrantedAuthority::getAuthority)
             .contains("ROLE_USER");
     }
+
+    @Test
+    void filterChain_shouldBuild() throws Exception {
+        SecurityConfig config = new SecurityConfig();
+        var http = org.mockito.Mockito.mock(org.springframework.security.config.annotation.web.builders.HttpSecurity.class);
+        
+        org.mockito.Mockito.when(http.authorizeHttpRequests(org.mockito.ArgumentMatchers.any())).thenReturn(http);
+        org.mockito.Mockito.when(http.oauth2ResourceServer(org.mockito.ArgumentMatchers.any())).thenReturn(http);
+        org.mockito.Mockito.when(http.build()).thenReturn(null);
+
+        var result = config.filterChain(http);
+        assertThat(result).isNull();
+    }
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -472,6 +473,44 @@ class CartItemServiceTest {
             verify(cartItemRepository).deleteAll(List.of(item1, item2));
             verify(cartItemRepository).saveAll(List.of());
             assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void testDeleteOrAdjustCartItem_whenCartItemDeleteVmsDuplicatedWithDifferentQuantity_shouldThrowBadRequestException() {
+            CartItemDeleteVm vm1 = new CartItemDeleteVm(1L, 1);
+            CartItemDeleteVm vm2 = new CartItemDeleteVm(1L, 2);
+            List<CartItemDeleteVm> cartItemDeleteVms = List.of(vm1, vm2);
+
+            assertThrows(BadRequestException.class, () -> cartItemService.deleteOrAdjustCartItem(cartItemDeleteVms));
+        }
+
+        @Test
+        void testDeleteOrAdjustCartItem_whenCartItemDeleteVmsDuplicatedWithSameQuantity_shouldNotThrow() {
+            CartItemDeleteVm vm1 = new CartItemDeleteVm(1L, 1);
+            CartItemDeleteVm vm2 = new CartItemDeleteVm(1L, 1);
+            List<CartItemDeleteVm> cartItemDeleteVms = List.of(vm1, vm2);
+
+            when(cartItemRepository.findByCustomerIdAndProductIdIn(anyString(), anyList()))
+                .thenReturn(List.of(CartItem.builder().productId(1L).quantity(5).build()));
+            mockCurrentUserId(CURRENT_USER_ID_SAMPLE);
+
+            cartItemService.deleteOrAdjustCartItem(cartItemDeleteVms);
+
+            verify(cartItemRepository).findByCustomerIdAndProductIdIn(anyString(), anyList());
+        }
+    }
+
+    @Nested
+    class AddCartItemExceptionTest {
+        @Test
+        void testAddCartItem_whenPessimisticLockingFailure_shouldThrowInternalServerErrorException() {
+            CartItemPostVm vm = new CartItemPostVm(1L, 1);
+            mockCurrentUserId(CURRENT_USER_ID_SAMPLE);
+            when(productService.existsById(1L)).thenReturn(true);
+            when(cartItemRepository.findByCustomerIdAndProductId(CURRENT_USER_ID_SAMPLE, 1L))
+                .thenThrow(new PessimisticLockingFailureException("lock failed"));
+
+            assertThrows(InternalServerErrorException.class, () -> cartItemService.addCartItem(vm));
         }
     }
 

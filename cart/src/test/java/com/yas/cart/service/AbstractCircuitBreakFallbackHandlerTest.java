@@ -76,3 +76,13 @@ class AbstractCircuitBreakFallbackHandlerTest {
         assertThat(thrown).isSameAs(checkedException);
     }
 }
+
+class RegularTestHandler extends AbstractCircuitBreakFallbackHandler {
+    public void callBodiless(Throwable throwable) throws Throwable {
+        handleBodilessFallback(throwable);
+    }
+
+    public <T> T callTyped(Throwable throwable) throws Throwable {
+        return handleTypedFallback(throwable);
+    }
+}
