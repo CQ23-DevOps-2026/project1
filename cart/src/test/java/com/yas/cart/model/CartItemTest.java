@@ -21,4 +21,21 @@ class CartItemTest {
         cartItem.setQuantity(4);
         assertThat(cartItem.getQuantity()).isEqualTo(4);
     }
+
+    @Test
+    void noArgsConstructor_and_allArgsConstructor_shouldWork() {
+        CartItem item1 = new CartItem();
+        item1.setCustomerId("c1");
+        item1.setProductId(1L);
+        item1.setQuantity(2);
+        
+        assertThat(item1.getCustomerId()).isEqualTo("c1");
+        assertThat(item1.getProductId()).isEqualTo(1L);
+        assertThat(item1.getQuantity()).isEqualTo(2);
+
+        CartItem item2 = new CartItem("c2", 2L, 3);
+        assertThat(item2.getCustomerId()).isEqualTo("c2");
+        assertThat(item2.getProductId()).isEqualTo(2L);
+        assertThat(item2.getQuantity()).isEqualTo(3);
+    }
 }

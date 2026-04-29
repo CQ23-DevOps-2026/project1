@@ -62,4 +62,37 @@ class CartViewModelTest {
         assertThat(vm.slug()).isEqualTo("slug");
         assertThat(vm.thumbnailUrl()).isEqualTo("url");
     }
+
+    @Test
+    void recordMethodsShouldWork() {
+        CartItemPostVm postVm1 = new CartItemPostVm(1L, 2);
+        CartItemPostVm postVm2 = new CartItemPostVm(1L, 2);
+        assertThat(postVm1.equals(postVm2)).isTrue();
+        assertThat(postVm1.hashCode()).isEqualTo(postVm2.hashCode());
+        assertThat(postVm1.toString()).contains("1");
+
+        CartItemDeleteVm deleteVm1 = new CartItemDeleteVm(1L, 2);
+        CartItemDeleteVm deleteVm2 = new CartItemDeleteVm(1L, 2);
+        assertThat(deleteVm1.equals(deleteVm2)).isTrue();
+        assertThat(deleteVm1.hashCode()).isEqualTo(deleteVm2.hashCode());
+        assertThat(deleteVm1.toString()).contains("1");
+
+        CartItemPutVm putVm1 = new CartItemPutVm(1);
+        CartItemPutVm putVm2 = new CartItemPutVm(1);
+        assertThat(putVm1.equals(putVm2)).isTrue();
+        assertThat(putVm1.hashCode()).isEqualTo(putVm2.hashCode());
+        assertThat(putVm1.toString()).contains("1");
+
+        CartItemGetVm getVm1 = new CartItemGetVm("user", 1L, 2);
+        CartItemGetVm getVm2 = new CartItemGetVm("user", 1L, 2);
+        assertThat(getVm1.equals(getVm2)).isTrue();
+        assertThat(getVm1.hashCode()).isEqualTo(getVm2.hashCode());
+        assertThat(getVm1.toString()).contains("user");
+
+        ProductThumbnailVm thumbVm1 = new ProductThumbnailVm(1L, "name", "slug", "url");
+        ProductThumbnailVm thumbVm2 = new ProductThumbnailVm(1L, "name", "slug", "url");
+        assertThat(thumbVm1.equals(thumbVm2)).isTrue();
+        assertThat(thumbVm1.hashCode()).isEqualTo(thumbVm2.hashCode());
+        assertThat(thumbVm1.toString()).contains("name");
+    }
 }

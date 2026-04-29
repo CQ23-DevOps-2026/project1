@@ -18,5 +18,14 @@ class CartItemIdTest {
         assertThat(first.getProductId()).isEqualTo(10L);
         assertThat(first).isEqualTo(second);
         assertThat(first.hashCode()).isEqualTo(second.hashCode());
+        
+        assertThat(first.equals(null)).isFalse();
+        assertThat(first.equals(new Object())).isFalse();
+        
+        CartItemId different = new CartItemId("user-2", 10L);
+        assertThat(first.equals(different)).isFalse();
+        
+        CartItemId different2 = new CartItemId("user-1", 11L);
+        assertThat(first.equals(different2)).isFalse();
     }
 }

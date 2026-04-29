@@ -1,6 +1,6 @@
 package com.yas.cart.service;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +21,14 @@ class AbstractCircuitBreakFallbackHandlerTest {
         TestHandler handler = new TestHandler();
         RuntimeException exception = new RuntimeException("circuit open");
 
-        assertThatThrownBy(() -> handler.callBodiless(exception))
-            .isSameAs(exception);
+        Throwable thrown = null;
+        try {
+            handler.callBodiless(exception);
+        } catch (Throwable ex) {
+            thrown = ex;
+        }
+
+        assertThat(thrown).isSameAs(exception);
     }
 
     @Test
@@ -30,7 +36,13 @@ class AbstractCircuitBreakFallbackHandlerTest {
         TestHandler handler = new TestHandler();
         RuntimeException exception = new RuntimeException("circuit open");
 
-        assertThatThrownBy(() -> handler.callTyped(exception))
-            .isSameAs(exception);
+        Throwable thrown = null;
+        try {
+            handler.callTyped(exception);
+        } catch (Throwable ex) {
+            thrown = ex;
+        }
+
+        assertThat(thrown).isSameAs(exception);
     }
 }

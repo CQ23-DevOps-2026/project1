@@ -1,7 +1,6 @@
 package com.yas.cart.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.yas.cart.viewmodel.ProductThumbnailVm;
@@ -271,10 +270,15 @@ class ProductServiceTest {
         @Test
         void handleProductThumbnailFallback_ShouldRethrowException() {
             RuntimeException cause = new RuntimeException("circuit open");
+            Throwable thrown = null;
 
-            assertThatThrownBy(() -> productService.handleProductThumbnailFallback(cause))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("circuit open");
+            try {
+                productService.handleProductThumbnailFallback(cause);
+            } catch (Throwable ex) {
+                thrown = ex;
+            }
+
+            assertThat(thrown).isSameAs(cause);
         }
     }
 
