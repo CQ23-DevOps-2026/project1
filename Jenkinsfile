@@ -124,9 +124,10 @@ pipeline {
 
                     // FIX: dùng triple-quote + escape \$ để tránh lỗi shell quoting
                     sh """
-                        mvn clean test jacoco:report \
+                        mvn clean verify \
                             -pl '${serviceSelector}' \
                             -am \
+                            -DskipITs \
                             -Dsurefire.excludes='**/*IT.java,**/*IT\$*.java,**/ProductCdcConsumerTest.java,**/ProductVectorRepositoryTest.java,**/VectorQueryTest.java'
                     """
                 }
@@ -151,8 +152,13 @@ pipeline {
                                 sourcePattern:      sourcePatterns,
                                 // ── Req: fail build nếu line coverage < 70% ──
                                 minimumLineCoverage: '70',
+                                minimumBranchCoverage: '70',
                                 changeBuildStatus:   true
                             )
+
+                            if (currentBuild.result == 'UNSTABLE') {
+                                error("Coverage < 70% (line/branch) cho: ${env.CHANGED_SERVICES}. Build FAIL.")
+                            }
                         }
                     }
                 }
