@@ -1198,10 +1198,6 @@ class ProductServiceTest {
 
         product.setProducts(new ArrayList<>());
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
-        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
-        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-MAIN")).thenReturn(Optional.empty());
-        when(productRepository.findBySkuAndIsPublishedTrue("SKU-MAIN")).thenReturn(Optional.empty());
 
         assertThrows(DuplicatedException.class, () -> productService.updateProduct(1L, putVm));
     }
@@ -1226,10 +1222,6 @@ class ProductServiceTest {
 
         product.setProducts(new ArrayList<>());
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
-        when(productRepository.findBySlugAndIsPublishedTrue("updated")).thenReturn(Optional.empty());
-        when(productRepository.findByGtinAndIsPublishedTrue("GTIN-MAIN")).thenReturn(Optional.empty());
-        when(productRepository.findBySkuAndIsPublishedTrue("SKU-MAIN")).thenReturn(Optional.empty());
 
         assertThrows(DuplicatedException.class, () -> productService.updateProduct(1L, putVm));
     }
@@ -1276,8 +1268,13 @@ class ProductServiceTest {
         when(productRepository.findBySkuAndIsPublishedTrue("SKU-UP")).thenReturn(Optional.empty());
         when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
         when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
-        when(productRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
-        when(productRepository.findAllById(List.of(2L))).thenReturn(List.of(relatedProduct));
+        lenient().when(productRepository.findAllById(anyCollection())).thenAnswer(inv -> {
+            Iterable<Long> ids = inv.getArgument(0);
+            for (Long id : ids) {
+                if (id.equals(2L)) return List.of(relatedProduct);
+            }
+            return Collections.emptyList();
+        });
 
         productService.updateProduct(1L, putVm);
 
