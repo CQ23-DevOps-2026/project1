@@ -90,7 +90,7 @@ class OrderServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        verify(orderRepository).save(any(Order.class));
+        verify(orderRepository, times(2)).save(any(Order.class));
         verify(orderItemRepository).saveAll(anySet());
         verify(productService).subtractProductStockQuantity(any(OrderVm.class));
         verify(cartService).deleteCartItems(any(OrderVm.class));
@@ -265,6 +265,7 @@ class OrderServiceTest {
         request.setCreatedTo(ZonedDateTime.now());
         request.setBillingCountry("Vietnam");
         request.setBillingPhoneNumber("0123456789");
+        request.setPageSize(10);
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
         // Act
@@ -282,6 +283,7 @@ class OrderServiceTest {
         request.setCreatedTo(ZonedDateTime.now());
         request.setBillingCountry("Vietnam");
         request.setBillingPhoneNumber("0123456789");
+        request.setPageSize(10);
         Page<Order> orderPage = new PageImpl<>(List.of(order));
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(orderPage);
         when(orderMapper.toCsv(any(OrderBriefVm.class))).thenReturn(Instancio.create(com.yas.order.model.csv.OrderItemCsv.class));
