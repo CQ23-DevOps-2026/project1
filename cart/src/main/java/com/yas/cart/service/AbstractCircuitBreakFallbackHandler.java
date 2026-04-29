@@ -10,11 +10,10 @@ abstract class AbstractCircuitBreakFallbackHandler {
     }
 
     protected <T> T handleTypedFallback(Throwable throwable) throws Throwable {
-        handleError(throwable);
-        return null;
+        return handleError(throwable);
     }
 
-    private void handleError(Throwable throwable) throws Throwable {
+    private <T> T handleError(Throwable throwable) throws Throwable {
         log.error("Circuit breaker records an error. Detail {}", throwable.getMessage());
         throw throwable;
     }

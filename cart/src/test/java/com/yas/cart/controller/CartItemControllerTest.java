@@ -221,6 +221,19 @@ class CartItemControllerTest {
             verify(cartItemService).deleteOrAdjustCartItem(anyList());
         }
 
+        @Test
+        void testDeleteOrAdjustCartItem_whenRequestIsEmptyList_shouldReturnEmptyList() throws Exception {
+            when(cartItemService.deleteOrAdjustCartItem(anyList())).thenReturn(List.of());
+
+            mockMvc.perform(post("/storefront/cart/items/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[]"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+            verify(cartItemService).deleteOrAdjustCartItem(anyList());
+        }
+
         private void performDeleteOrAdjustCartItemAndExpectBadRequest(CartItemDeleteVm cartItemDeleteVm)
             throws Exception {
             mockMvc.perform(buildDeleteOrAdjustCartItemRequest(cartItemDeleteVm))

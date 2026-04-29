@@ -263,6 +263,18 @@ class CartItemServiceTest {
             assertEquals(1, cartItemGetVms.size());
             assertEquals(expectedQuantity, cartItemGetVms.getFirst().quantity());
         }
+
+        @Test
+        void testDeleteOrAdjustCartItem_whenEmptyList_shouldReturnEmptyList() {
+            List<CartItemDeleteVm> cartItemDeleteVms = List.of();
+            
+            mockCurrentUserId(CURRENT_USER_ID_SAMPLE);
+            when(cartItemRepository.findByCustomerIdAndProductIdIn(any(), any())).thenReturn(List.of());
+
+            List<CartItemGetVm> cartItemGetVms = cartItemService.deleteOrAdjustCartItem(cartItemDeleteVms);
+
+            assertEquals(0, cartItemGetVms.size());
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
