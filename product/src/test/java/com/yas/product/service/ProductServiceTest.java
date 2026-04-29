@@ -1285,7 +1285,7 @@ class ProductServiceTest {
     // ========== updateProduct - with new variation and missing option value ==========
     @Test
     void updateProduct_WithVariation_MissingOptionValue_ShouldThrow() {
-        ProductOptionValuePutVm optValVm = new ProductOptionValuePutVm(1L, "Red");
+        ProductOptionValuePutVm optValVm = new ProductOptionValuePutVm(1L, "Text", 1, List.of("Red"));
         ProductVariationPutVm varVm = new ProductVariationPutVm(
             null, "Var1", "var1", "V-SKU", "V-GTIN", 50.0, 11L, List.of(), Map.of(1L, "Blue")
         );
