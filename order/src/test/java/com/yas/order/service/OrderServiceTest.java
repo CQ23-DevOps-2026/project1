@@ -83,6 +83,7 @@ class OrderServiceTest {
             savedOrder.setId(1L);
             return savedOrder;
         });
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
         
         // Act
         OrderVm result = orderService.createOrder(orderPostVm);
@@ -260,6 +261,10 @@ class OrderServiceTest {
     void exportCsv_EmptyList_ReturnsEmptyCsv() throws Exception {
         // Arrange
         OrderRequest request = new OrderRequest();
+        request.setCreatedFrom(ZonedDateTime.now());
+        request.setCreatedTo(ZonedDateTime.now());
+        request.setBillingCountry("Vietnam");
+        request.setBillingPhoneNumber("0123456789");
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
         // Act
@@ -273,6 +278,10 @@ class OrderServiceTest {
     void exportCsv_WithData_ReturnsCsvBytes() throws Exception {
         // Arrange
         OrderRequest request = new OrderRequest();
+        request.setCreatedFrom(ZonedDateTime.now());
+        request.setCreatedTo(ZonedDateTime.now());
+        request.setBillingCountry("Vietnam");
+        request.setBillingPhoneNumber("0123456789");
         Page<Order> orderPage = new PageImpl<>(List.of(order));
         when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(orderPage);
         when(orderMapper.toCsv(any(OrderBriefVm.class))).thenReturn(Instancio.create(com.yas.order.model.csv.OrderItemCsv.class));
