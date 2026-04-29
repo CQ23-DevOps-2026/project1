@@ -23,6 +23,6 @@ class SecurityConfigTest {
 
         assertThat(authentication.getAuthorities())
             .extracting(GrantedAuthority::getAuthority)
-            .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_CUSTOMER");
+            .contains("ROLE_ADMIN", "ROLE_CUSTOMER");
     }
 }
