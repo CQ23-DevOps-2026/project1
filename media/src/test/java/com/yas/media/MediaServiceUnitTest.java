@@ -1,6 +1,7 @@
 package com.yas.media;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -314,6 +316,43 @@ class MediaServiceUnitTest {
         Media saved = mediaService.saveMedia(mediaPostVm);
         assertNotNull(saved);
         assertEquals("overridden-name.png", saved.getFileName());
+    }
+
+    @Test
+    void saveMedia_whenFileNameOverrideHasSpaces_thenTrimAndPersist() throws IOException {
+        byte[] content = "data".getBytes();
+        MultipartFile multipartFile = new MockMultipartFile(
+            "file", "original.png", "image/png", content
+        );
+        MediaPostVm mediaPostVm = new MediaPostVm("caption", multipartFile, "  overridden.png  ");
+
+        when(fileSystemRepository.persistFile(any(), any())).thenReturn("/tmp/overridden.png");
+        when(mediaRepository.save(any(Media.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Media saved = mediaService.saveMedia(mediaPostVm);
+
+        assertNotNull(saved);
+        assertEquals("overridden.png", saved.getFileName());
+        assertEquals("/tmp/overridden.png", saved.getFilePath());
+
+        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<byte[]> bytesCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(fileSystemRepository).persistFile(nameCaptor.capture(), bytesCaptor.capture());
+        assertEquals("overridden.png", nameCaptor.getValue());
+        assertArrayEquals(content, bytesCaptor.getValue());
+    }
+
+    @Test
+    void saveMedia_whenPersistFileThrowsIOException_thenThrowsRuntimeException() throws IOException {
+        byte[] content = "data".getBytes();
+        MultipartFile multipartFile = new MockMultipartFile(
+            "file", "original.png", "image/png", content
+        );
+        MediaPostVm mediaPostVm = new MediaPostVm("caption", multipartFile, null);
+
+        when(fileSystemRepository.persistFile(any(), any())).thenThrow(new IOException("io"));
+
+        assertThrows(RuntimeException.class, () -> mediaService.saveMedia(mediaPostVm));
     }
 
     @Test
