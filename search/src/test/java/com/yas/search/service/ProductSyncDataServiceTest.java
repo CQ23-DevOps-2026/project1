@@ -209,6 +209,23 @@ class ProductSyncDataServiceTest {
 
 
     @Test
+    void testCreateProduct_whenApiError_throwsException() {
+        Long id = 1L;
+        final URI url = UriComponentsBuilder.fromUriString(PRODUCT_URL)
+            .path("/storefront/products-es/{id}").buildAndExpand(id).toUri();
+        when(serviceUrlConfig.product()).thenReturn(PRODUCT_URL);
+        when(restClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(ProductEsDetailVm.class))
+            .thenThrow(new RuntimeException("API error"));
+
+        assertThatThrownBy(() -> productSyncDataService.createProduct(id))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessage("API error");
+    }
+
+    @Test
     void testDeleteProduct_whenProductExists_deletesProduct() {
         Long id = 1L;
 
@@ -219,16 +236,14 @@ class ProductSyncDataServiceTest {
         verify(productRepository).deleteById(id);
     }
 
-    @Disabled
     @Test
-    void testDeleteProduct_whenProductDoesNotExist_throwsNotFoundException() {
+    void testDeleteProduct_whenProductDoesNotExist_logsWarning() {
         Long id = 1L;
 
         when(productRepository.existsById(id)).thenReturn(false);
 
-        assertThatThrownBy(() -> productSyncDataService.deleteProduct(id))
-            .isInstanceOf(NotFoundException.class)
-            .hasMessageContaining("The product 1 is not found");
+        // Should NOT throw, should just log warning
+        productSyncDataService.deleteProduct(id);
 
         verify(productRepository, never()).deleteById(id);
     }
