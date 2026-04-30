@@ -141,4 +141,19 @@ class ModelCoverageTest {
             // Context might fail to load in unit test, but the line is executed.
         }
     }
+
+    @Test
+    void testStringUtilsUtilityClass() throws Exception {
+        java.lang.reflect.Constructor<com.yas.media.utils.StringUtils> constructor = com.yas.media.utils.StringUtils.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        try {
+            constructor.newInstance();
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            assertTrue(e.getCause() instanceof UnsupportedOperationException);
+        }
+        
+        assertFalse(com.yas.media.utils.StringUtils.hasText(null));
+        assertFalse(com.yas.media.utils.StringUtils.hasText("   "));
+        assertTrue(com.yas.media.utils.StringUtils.hasText("text"));
+    }
 }
