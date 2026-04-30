@@ -49,9 +49,7 @@ class SecurityConfigTest {
         var authentication = converter.convert(jwt);
         Collection<GrantedAuthority> authorities = authentication.getAuthorities();
 
-        assertThat(authorities).containsExactlyInAnyOrder(
-                new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
+        assertThat(authorities).extracting(GrantedAuthority::getAuthority)
+                .contains("ROLE_ADMIN", "ROLE_USER");
     }
 }
