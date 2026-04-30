@@ -64,4 +64,46 @@ class MediaVmMapperTest {
         assertEquals("file.jpg", media.getFileName());
         assertEquals("image/jpeg", media.getMediaType());
     }
+
+    @Test
+    void partialUpdate_whenVmIsNull_thenDoNothing() {
+        Media media = new Media();
+        media.setCaption("old");
+        mapper.partialUpdate(media, null);
+        assertEquals("old", media.getCaption());
+    }
+
+    @Test
+    void partialUpdate_whenVmIsValid_thenUpdateFields() {
+        Media media = new Media();
+        media.setCaption("old cap");
+        media.setFileName("old.jpg");
+        media.setId(1L);
+        media.setMediaType("image/jpeg");
+
+        MediaVm vm = new MediaVm(2L, "new cap", "new.png", "image/png", null);
+        mapper.partialUpdate(media, vm);
+
+        assertEquals("new cap", media.getCaption());
+        assertEquals("new.png", media.getFileName());
+        assertEquals(2L, media.getId());
+        assertEquals("image/png", media.getMediaType());
+    }
+
+    @Test
+    void partialUpdate_whenVmFieldsAreNull_thenDoNotUpdate() {
+        Media media = new Media();
+        media.setCaption("old cap");
+        media.setFileName("old.jpg");
+        media.setId(1L);
+        media.setMediaType("image/jpeg");
+
+        MediaVm vm = new MediaVm(null, null, null, null, null);
+        mapper.partialUpdate(media, vm);
+
+        assertEquals("old cap", media.getCaption());
+        assertEquals("old.jpg", media.getFileName());
+        assertEquals(1L, media.getId());
+        assertEquals("image/jpeg", media.getMediaType());
+    }
 }

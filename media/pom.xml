@@ -102,6 +102,12 @@
                             </limits>
                         </rule>
                     </rules>
+                    <excludes>
+                        <exclude>com/yas/**/*Application.class</exclude>
+                        <exclude>com/yas/**/config/**</exclude>
+                        <exclude>com/yas/**/exception/**</exclude>
+                        <exclude>com/yas/**/constants/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>
