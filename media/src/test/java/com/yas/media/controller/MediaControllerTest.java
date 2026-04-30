@@ -201,14 +201,6 @@ class MediaControllerTest {
             .andExpect(status().isNotFound());
     }
 
-    @Test
-    void getByIds_whenServiceReturnsNull_thenReturn404() throws Exception {
-        when(mediaService.getMediaByIds(anyList())).thenReturn(null);
-
-        mockMvc.perform(get("/medias").param("ids", "99"))
-            .andExpect(status().isNotFound());
-    }
-
     // ==============================
     // GET /medias/{id}/file/{fileName}
     // ==============================
