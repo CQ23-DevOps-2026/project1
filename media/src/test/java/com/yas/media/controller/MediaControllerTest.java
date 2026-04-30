@@ -132,6 +132,13 @@ class MediaControllerTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void create_whenFileIsMissing_thenReturn400() throws Exception {
+        mockMvc.perform(multipart("/medias")
+                .param("caption", "caption"))
+            .andExpect(status().isBadRequest());
+    }
+
     // ==============================
     // DELETE /medias/{id}
     // ==============================
@@ -199,6 +206,12 @@ class MediaControllerTest {
 
         mockMvc.perform(get("/medias").param("ids", "99"))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getByIds_whenIdsParamMissing_thenReturn400() throws Exception {
+        mockMvc.perform(get("/medias"))
+            .andExpect(status().isBadRequest());
     }
 
     // ==============================

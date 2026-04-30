@@ -25,18 +25,28 @@ class ModelCoverageTest {
 
     @Test
     void testMediaEntity() {
-        Media media = new Media();
-        media.setId(1L);
-        media.setCaption("Caption");
-        media.setFileName("file.png");
-        media.setFilePath("/path/to/file.png");
-        media.setMediaType("image/png");
+        Media media1 = new Media();
+        media1.setId(1L);
+        media1.setCaption("Caption");
+        media1.setFileName("file.png");
+        media1.setFilePath("/path/to/file.png");
+        media1.setMediaType("image/png");
 
-        assertEquals(1L, media.getId());
-        assertEquals("Caption", media.getCaption());
-        assertEquals("file.png", media.getFileName());
-        assertEquals("/path/to/file.png", media.getFilePath());
-        assertEquals("image/png", media.getMediaType());
+        assertEquals(1L, media1.getId());
+        assertEquals("Caption", media1.getCaption());
+        assertEquals("file.png", media1.getFileName());
+        assertEquals("/path/to/file.png", media1.getFilePath());
+        assertEquals("image/png", media1.getMediaType());
+
+        // Test setters
+        Media media2 = new Media();
+        media2.setId(1L);
+        media2.setCaption("Caption");
+        media2.setFileName("file.png");
+        media2.setFilePath("/path/to/file.png");
+        media2.setMediaType("image/png");
+
+        // Since Media uses Lombok @Getter/@Setter but NOT @EqualsAndHashCode, we don't test equals/hashCode here.
     }
 
     @Test
@@ -87,18 +97,21 @@ class ModelCoverageTest {
 
     @Test
     void testMediaVm() {
-        MediaVm vm = new MediaVm(1L, "Cap", "file.png", "image/png", "http://url");
-        vm.setId(2L);
-        vm.setCaption("Cap2");
-        vm.setFileName("file2.png");
-        vm.setMediaType("image/jpeg");
-        vm.setUrl("http://url2");
+        MediaVm vm1 = new MediaVm(1L, "Cap", "file.png", "image/png", "http://url");
+        vm1.setId(2L);
+        vm1.setCaption("Cap2");
+        vm1.setFileName("file2.png");
+        vm1.setMediaType("image/jpeg");
+        vm1.setUrl("http://url2");
 
-        assertEquals(2L, vm.getId());
-        assertEquals("Cap2", vm.getCaption());
-        assertEquals("file2.png", vm.getFileName());
-        assertEquals("image/jpeg", vm.getMediaType());
-        assertEquals("http://url2", vm.getUrl());
+        assertEquals(2L, vm1.getId());
+        assertEquals("Cap2", vm1.getCaption());
+        assertEquals("file2.png", vm1.getFileName());
+        assertEquals("image/jpeg", vm1.getMediaType());
+        assertEquals("http://url2", vm1.getUrl());
+
+        MediaVm vm2 = new MediaVm(2L, "Cap2", "file2.png", "image/jpeg", "http://url2");
+        // MediaVm doesn't have @EqualsAndHashCode or custom toString, so we don't test them here.
     }
 
     @Test
