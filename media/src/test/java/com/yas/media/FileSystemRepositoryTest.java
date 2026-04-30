@@ -79,6 +79,45 @@ class FileSystemRepositoryTest {
         assertThrows(IllegalArgumentException.class, () -> fileSystemRepository.persistFile(filename, content));
     }
 
+    /**
+     * Covers the TRUE branch of filename.contains("..") in buildFilePath().
+     * JaCoCo tracks each sub-expression of || as a separate branch.
+     */
+    @Test
+    void testPersistFile_whenFilenameContainsDotDot_thenThrowsIllegalArgumentException() {
+        new File(TEST_URL).mkdirs();
+        when(filesystemConfig.getDirectory()).thenReturn(TEST_URL);
+
+        assertThrows(IllegalArgumentException.class,
+            () -> fileSystemRepository.persistFile("../evil.png", "content".getBytes()));
+    }
+
+    /**
+     * Covers the TRUE branch of filename.contains("/") in buildFilePath()
+     * (reached only when the ".." check evaluates to false).
+     */
+    @Test
+    void testPersistFile_whenFilenameContainsSlash_thenThrowsIllegalArgumentException() {
+        new File(TEST_URL).mkdirs();
+        when(filesystemConfig.getDirectory()).thenReturn(TEST_URL);
+
+        assertThrows(IllegalArgumentException.class,
+            () -> fileSystemRepository.persistFile("sub/evil.png", "content".getBytes()));
+    }
+
+    /**
+     * Covers the TRUE branch of filename.contains("\\") in buildFilePath()
+     * (reached only when both ".." and "/" checks evaluate to false).
+     */
+    @Test
+    void testPersistFile_whenFilenameContainsBackslash_thenThrowsIllegalArgumentException() {
+        new File(TEST_URL).mkdirs();
+        when(filesystemConfig.getDirectory()).thenReturn(TEST_URL);
+
+        assertThrows(IllegalArgumentException.class,
+            () -> fileSystemRepository.persistFile("sub\\evil.png", "content".getBytes()));
+    }
+
     @Test
     void testGetFile_whenDirectIsExist_thenReturnFile() throws IOException {
         String filename = "test-file.png";
@@ -108,4 +147,3 @@ class FileSystemRepositoryTest {
     }
 
 }
-
