@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class ControllerAdvisorTest {
 
@@ -102,5 +103,22 @@ class ControllerAdvisorTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Some exception", response.getBody().detail());
+    }
+
+    @Test
+    void handleMethodArgumentNotValid_thenReturn400() {
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        org.springframework.validation.BindingResult bindingResult = mock(org.springframework.validation.BindingResult.class);
+        org.springframework.validation.FieldError fieldError = new org.springframework.validation.FieldError("objectName", "fieldName", "must not be blank");
+        when(bindingResult.getFieldErrors()).thenReturn(java.util.List.of(fieldError));
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+
+        ResponseEntity<ErrorVm> response = controllerAdvisor.handleMethodArgumentNotValid(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Request information is not valid", response.getBody().detail());
+        assertEquals(1, response.getBody().fieldErrors().size());
+        assertEquals("fieldName must not be blank", response.getBody().fieldErrors().get(0));
     }
 }

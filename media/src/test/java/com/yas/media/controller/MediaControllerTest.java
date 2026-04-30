@@ -97,6 +97,29 @@ class MediaControllerTest {
     }
 
     @Test
+    void create_whenValidFileNoOverride_thenReturn200() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+            "multipartFile", "test.png", MediaType.IMAGE_PNG_VALUE, createValidImageBytes("png")
+        );
+
+        Media savedMedia = new Media();
+        savedMedia.setId(2L);
+        savedMedia.setCaption("caption");
+        savedMedia.setFileName("test.png");
+        savedMedia.setMediaType(MediaType.IMAGE_PNG_VALUE);
+
+        when(mediaService.saveMedia(any())).thenReturn(savedMedia);
+
+        mockMvc.perform(multipart("/medias")
+                .file(file)
+                .param("caption", "caption"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(2L))
+            .andExpect(jsonPath("$.caption").value("caption"))
+            .andExpect(jsonPath("$.fileName").value("test.png"));
+    }
+
+    @Test
     void create_whenInvalidImageContent_thenReturn400() throws Exception {
         // content-type is image/png but bytes are not a valid image → FileTypeValidator returns false → 400
         MockMultipartFile invalidFile = new MockMultipartFile(
@@ -178,6 +201,14 @@ class MediaControllerTest {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void getByIds_whenServiceReturnsNull_thenReturn404() throws Exception {
+        when(mediaService.getMediaByIds(anyList())).thenReturn(null);
+
+        mockMvc.perform(get("/medias").param("ids", "99"))
+            .andExpect(status().isNotFound());
+    }
+
     // ==============================
     // GET /medias/{id}/file/{fileName}
     // ==============================
@@ -195,5 +226,14 @@ class MediaControllerTest {
         mockMvc.perform(get("/medias/1/file/test.png"))
             .andExpect(status().isOk())
             .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test.png\""));
+    }
+
+    @Test
+    void getFile_whenMediaContentIsNull_thenReturn500() throws Exception {
+        MediaDto mediaDto = MediaDto.builder().build(); // content is null
+        when(mediaService.getFile(1L, "test.png")).thenReturn(mediaDto);
+
+        mockMvc.perform(get("/medias/1/file/test.png"))
+            .andExpect(status().isInternalServerError());
     }
 }
