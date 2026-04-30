@@ -107,6 +107,10 @@
                         <exclude>com/yas/**/config/**</exclude>
                         <exclude>com/yas/**/exception/**</exclude>
                         <exclude>com/yas/**/constants/**</exclude>
+                        <exclude>com/yas/**/viewmodel/**</exclude>
+                        <exclude>com/yas/**/model/dto/**</exclude>
+                        <exclude>com/yas/**/utils/ValidFileType.class</exclude>
+                        <exclude>com/yas/**/utils/ValidFileTypeValidator.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

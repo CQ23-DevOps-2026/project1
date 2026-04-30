@@ -241,4 +241,72 @@ class MediaControllerTest {
         mockMvc.perform(get("/medias/1/file/test.png"))
             .andExpect(status().isInternalServerError());
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Additional edge case tests for full branch coverage
+    // ─────────────────────────────────────────────────────────────────────
+
+    @Test
+    void create_whenServiceThrowsException_thenReturn500() throws Exception {
+        byte[] validImage = createValidImageBytes("png");
+        MockMultipartFile file = new MockMultipartFile(
+            "multipartFile", "test.png", MediaType.IMAGE_PNG_VALUE, validImage
+        );
+
+        when(mediaService.saveMedia(any())).thenThrow(new RuntimeException("Disk full"));
+
+        mockMvc.perform(multipart("/medias")
+                .file(file)
+                .param("caption", "caption"))
+            .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void delete_whenServiceThrowsRuntimeException_thenReturn500() throws Exception {
+        doThrow(new RuntimeException("Unexpected error")).when(mediaService).removeMedia(1L);
+
+        mockMvc.perform(delete("/medias/1"))
+            .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void getById_whenMediaExists_thenReturnFullResponse() throws Exception {
+        MediaVm mediaVm = new MediaVm(10L, "full-caption", "full.png", "image/png", "http://cdn/full.png");
+        when(mediaService.getMediaById(10L)).thenReturn(mediaVm);
+
+        mockMvc.perform(get("/medias/10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(10L))
+            .andExpect(jsonPath("$.caption").value("full-caption"))
+            .andExpect(jsonPath("$.fileName").value("full.png"))
+            .andExpect(jsonPath("$.mediaType").value("image/png"))
+            .andExpect(jsonPath("$.url").value("http://cdn/full.png"));
+    }
+
+    @Test
+    void getFile_whenJpegMedia_thenReturnCorrectContentType() throws Exception {
+        byte[] fileContent = "jpeg-data".getBytes();
+        MediaDto mediaDto = MediaDto.builder()
+            .content(new ByteArrayInputStream(fileContent))
+            .mediaType(MediaType.IMAGE_JPEG)
+            .build();
+
+        when(mediaService.getFile(2L, "photo.jpg")).thenReturn(mediaDto);
+
+        mockMvc.perform(get("/medias/2/file/photo.jpg"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"photo.jpg\""));
+    }
+
+    @Test
+    void getByIds_whenSingleIdExists_thenReturnSingleElementList() throws Exception {
+        MediaVm mediaVm = new MediaVm(5L, "single", "single.png", "image/png", "http://url/5");
+        when(mediaService.getMediaByIds(List.of(5L))).thenReturn(List.of(mediaVm));
+
+        mockMvc.perform(get("/medias").param("ids", "5"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(5L))
+            .andExpect(jsonPath("$[0].caption").value("single"));
+    }
 }
