@@ -24,6 +24,8 @@ import com.yas.media.service.MediaServiceImpl;
 import com.yas.media.viewmodel.MediaPostVm;
 import com.yas.media.viewmodel.MediaVm;
 import com.yas.media.viewmodel.NoFileMediaVm;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -272,6 +274,46 @@ class MediaServiceUnitTest {
         media.setId(id);
         media.setFileName(name);
         return media;
+    }
+
+    @Test
+    void getFile_whenFileNameMatches_thenReturnMediaDtoWithContent() throws IOException {
+        // media.getFileName() == "file" (set in setUp), request with "file"
+        when(mediaRepository.findById(1L)).thenReturn(Optional.of(media));
+
+        InputStream fakeStream = new java.io.ByteArrayInputStream("data".getBytes());
+        when(fileSystemRepository.getFile(any())).thenReturn(fakeStream);
+
+        MediaDto mediaDto = mediaService.getFile(1L, "file");
+
+        assertNotNull(mediaDto.getContent());
+        assertNotNull(mediaDto.getMediaType());
+        assertEquals(org.springframework.http.MediaType.IMAGE_JPEG, mediaDto.getMediaType());
+    }
+
+    @Test
+    void getMediaByIds_whenEmpty_thenReturnEmptyList() {
+        when(mediaRepository.findAllById(List.of())).thenReturn(List.of());
+
+        var result = mediaService.getMediaByIds(List.of());
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void saveMedia_whenFileNameOverrideProvided_thenUseOverrideName() {
+        byte[] content = new byte[]{};
+        MultipartFile multipartFile = new MockMultipartFile(
+            "file", "original.png", "image/png", content
+        );
+        MediaPostVm mediaPostVm = new MediaPostVm("caption", multipartFile, "overridden-name.png");
+
+        when(mediaRepository.save(any(Media.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Media saved = mediaService.saveMedia(mediaPostVm);
+        assertNotNull(saved);
+        assertEquals("overridden-name.png", saved.getFileName());
     }
 
 
