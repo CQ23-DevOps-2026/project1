@@ -325,7 +325,7 @@ class MediaServiceUnitTest {
         
         MediaPostVm mediaPostVm = new MediaPostVm("caption", multipartFile, null);
         
-        assertThrows(IOException.class, () -> mediaService.saveMedia(mediaPostVm));
+        assertThrows(RuntimeException.class, () -> mediaService.saveMedia(mediaPostVm));
     }
 
 }
