@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 
 class SecurityConfigTest {
@@ -21,7 +22,7 @@ class SecurityConfigTest {
     void filterChain_shouldReturnSecurityFilterChain() throws Exception {
         SecurityConfig securityConfig = new SecurityConfig();
         HttpSecurity httpSecurity = mock(HttpSecurity.class);
-        SecurityFilterChain securityFilterChain = mock(SecurityFilterChain.class);
+        DefaultSecurityFilterChain securityFilterChain = mock(DefaultSecurityFilterChain.class);
 
         when(httpSecurity.authorizeHttpRequests(org.mockito.ArgumentMatchers.any())).thenReturn(httpSecurity);
         when(httpSecurity.oauth2ResourceServer(org.mockito.ArgumentMatchers.any())).thenReturn(httpSecurity);
