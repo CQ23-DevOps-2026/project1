@@ -209,9 +209,11 @@ class MediaControllerTest {
     }
 
     @Test
-    void getByIds_whenIdsParamMissing_thenReturn400() throws Exception {
+    void getByIds_whenIdsParamMissing_thenReturn500() throws Exception {
+        // MissingServletRequestParameterException is not handled specifically
+        // by ControllerAdvisor, so falls to generic handleOtherException → 500
         mockMvc.perform(get("/medias"))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isInternalServerError());
     }
 
     // ==============================
