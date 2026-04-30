@@ -13,10 +13,19 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 class SecurityConfigTest {
 
     private final SecurityConfig securityConfig = new SecurityConfig();
+
+
+    @Test
+    void testFilterChain() throws Exception {
+        HttpSecurity http = mock(HttpSecurity.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
+        // By using RETURNS_DEEP_STUBS, we can execute the filterChain without NPEs
+        assertNotNull(securityConfig.filterChain(http));
+    }
 
     @Test
     void testJwtAuthenticationConverterForKeycloak() {

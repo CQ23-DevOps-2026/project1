@@ -316,5 +316,16 @@ class MediaServiceUnitTest {
         assertEquals("overridden-name.png", saved.getFileName());
     }
 
+    @Test
+    void saveMedia_whenGetBytesThrowsIOException_thenThrowsException() throws IOException {
+        MultipartFile multipartFile = org.mockito.Mockito.mock(MultipartFile.class);
+        when(multipartFile.getContentType()).thenReturn("image/png");
+        when(multipartFile.getOriginalFilename()).thenReturn("test.png");
+        when(multipartFile.getBytes()).thenThrow(new IOException("test exception"));
+        
+        MediaPostVm mediaPostVm = new MediaPostVm("caption", multipartFile, null);
+        
+        assertThrows(IOException.class, () -> mediaService.saveMedia(mediaPostVm));
+    }
 
 }

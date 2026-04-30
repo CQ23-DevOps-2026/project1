@@ -42,10 +42,12 @@ class ModelCoverageTest {
     @Test
     void testMediaDto() {
         InputStream is = InputStream.nullInputStream();
-        MediaDto dto = MediaDto.builder()
+        MediaDto.MediaDtoBuilder builder = MediaDto.builder()
             .content(is)
-            .mediaType(MediaType.IMAGE_PNG)
-            .build();
+            .mediaType(MediaType.IMAGE_PNG);
+        assertNotNull(builder.toString());
+
+        MediaDto dto = builder.build();
 
         assertEquals(is, dto.getContent());
         assertEquals(MediaType.IMAGE_PNG, dto.getMediaType());
