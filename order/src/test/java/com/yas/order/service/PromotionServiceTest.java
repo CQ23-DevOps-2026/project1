@@ -68,7 +68,7 @@ class PromotionServiceTest {
                         .userId("user456")
                         .orderId(1002L)
                         .productId(5002L)
-                        .build()
-        );
+                        .build());
     }
 }
+// Test coverage fail
