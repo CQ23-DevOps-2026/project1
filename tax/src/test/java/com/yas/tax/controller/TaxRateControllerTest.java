@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// CI note: touched to validate SonarQube/SonarCloud pipeline stages.
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yas.tax.model.TaxClass;
 import com.yas.tax.model.TaxRate;
@@ -30,8 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = TaxRateController.class,
-    excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
+@WebMvcTest(controllers = TaxRateController.class, excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
 class TaxRateControllerTest {
 
@@ -52,8 +53,8 @@ class TaxRateControllerTest {
         when(taxRateService.getPageableTaxRates(anyInt(), anyInt())).thenReturn(vm);
 
         mockMvc.perform(get("/backoffice/tax-rates/paging"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.pageNo").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pageNo").value(0));
     }
 
     @Test
@@ -63,8 +64,8 @@ class TaxRateControllerTest {
         when(taxRateService.findById(1L)).thenReturn(vm);
 
         mockMvc.perform(get("/backoffice/tax-rates/1"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -77,8 +78,8 @@ class TaxRateControllerTest {
         mockMvc.perform(post("/backoffice/tax-rates")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(postVm)))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").value(1));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -88,7 +89,7 @@ class TaxRateControllerTest {
         mockMvc.perform(put("/backoffice/tax-rates/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(postVm)))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
 
         verify(taxRateService).updateTaxRate(any(TaxRatePostVm.class), anyLong());
     }
@@ -96,7 +97,7 @@ class TaxRateControllerTest {
     @Test
     void deleteTaxRate_ShouldReturnNoContent() throws Exception {
         mockMvc.perform(delete("/backoffice/tax-rates/1"))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
 
         verify(taxRateService).delete(1L);
     }
@@ -108,7 +109,7 @@ class TaxRateControllerTest {
         mockMvc.perform(get("/backoffice/tax-rates/tax-percent")
                 .param("taxClassId", "1")
                 .param("countryId", "1"))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -118,6 +119,6 @@ class TaxRateControllerTest {
         mockMvc.perform(get("/backoffice/tax-rates/location-based-batch")
                 .param("taxClassIds", "1,2")
                 .param("countryId", "1"))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 }
