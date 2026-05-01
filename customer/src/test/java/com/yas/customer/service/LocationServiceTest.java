@@ -15,6 +15,8 @@ import com.yas.customer.viewmodel.address.AddressVm;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -123,6 +125,32 @@ class LocationServiceTest {
         AddressVm result = locationService.createAddress(addressPostVm);
 
         assertEquals(addressVm, result);
+    }
+
+    @Test
+    void testHandleAddressDetailListFallback_whenCalled_thenRethrowOriginalThrowable() throws Exception {
+        assertFallbackRethrows("handleAddressDetailListFallback");
+    }
+
+    @Test
+    void testHandleAddressDetailFallback_whenCalled_thenRethrowOriginalThrowable() throws Exception {
+        assertFallbackRethrows("handleAddressDetailFallback");
+    }
+
+    @Test
+    void testHandleAddressFallback_whenCalled_thenRethrowOriginalThrowable() throws Exception {
+        assertFallbackRethrows("handleAddressFallback");
+    }
+
+    private void assertFallbackRethrows(String methodName) throws Exception {
+        Method method = LocationService.class.getDeclaredMethod(methodName, Throwable.class);
+        method.setAccessible(true);
+        RuntimeException exception = new RuntimeException("fallback");
+
+        InvocationTargetException thrown = org.junit.jupiter.api.Assertions.assertThrows(InvocationTargetException.class,
+            () -> method.invoke(locationService, exception));
+
+        assertThat(thrown.getCause()).isSameAs(exception);
     }
 
     private AddressDetailVm getAddressDetailVm() {

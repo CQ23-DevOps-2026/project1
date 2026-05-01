@@ -90,4 +90,32 @@ class CheckoutMapperTest {
                 .hasFieldOrPropertyWithValue("shipmentTax", checkoutItem.getShipmentTax())
                 .hasFieldOrPropertyWithValue("checkoutId", checkoutItem.getCheckout().getId());
     }
+
+    @Test
+    void testMapBigDecimal_whenNotNull_returnsValue() {
+        java.math.BigDecimal value = new java.math.BigDecimal("10.00");
+        var res = checkoutMapper.map(value);
+        Assertions.assertThat(res).isEqualTo(value);
+    }
+
+    @Test
+    void testToModel_nullCheckoutItemPostVm_returnsNull() {
+        Assertions.assertThat(checkoutMapper.toModel((CheckoutItemPostVm) null)).isNull();
+    }
+
+    @Test
+    void testToModel_nullCheckoutPostVm_returnsNull() {
+        Assertions.assertThat(checkoutMapper.toModel((CheckoutPostVm) null)).isNull();
+    }
+
+    @Test
+    void testToVm_nullCheckout_returnsNull() {
+        Assertions.assertThat(checkoutMapper.toVm((Checkout) null)).isNull();
+    }
+
+    @Test
+    void testToVm_nullCheckoutItem_returnsNull() {
+        Assertions.assertThat(checkoutMapper.toVm((com.yas.order.model.CheckoutItem) null)).isNull();
+    }
 }
+

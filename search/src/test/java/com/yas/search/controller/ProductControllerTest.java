@@ -27,8 +27,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = ProductController.class,
-    excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
+// CI note: touched to validate SonarQube/SonarCloud pipeline stages.
+
+@WebMvcTest(controllers = ProductController.class, excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
 class ProductControllerTest {
 
@@ -37,7 +38,8 @@ class ProductControllerTest {
 
     @MockitoBean
     private ProductRepository productRepository; // Adding this unused mockBean to avoid error
-                                                // due to making network call to ES during repository bean initialization.
+                                                 // due to making network call to ES during repository bean
+                                                 // initialization.
     @Autowired
     private MockMvc mockMvc;
 
@@ -45,26 +47,22 @@ class ProductControllerTest {
     void testFindProductAdvance_whenProductListIsExists_thenReturnProductListGetVm() throws Exception {
 
         ProductGetVm productGetVm = new ProductGetVm(
-            1L,
-            "Sample Product",
-            "sample-product",
-            123L,
-            29.99,
-            true,
-            true,
-            false,
-            true,
-            ZonedDateTime.now()
-        );
+                1L,
+                "Sample Product",
+                "sample-product",
+                123L,
+                29.99,
+                true,
+                true,
+                false,
+                true,
+                ZonedDateTime.now());
 
         ProductListGetVm mockResponse = new ProductListGetVm(
-            List.of(productGetVm), 0, 1, 1, 1, true, Map.of()
-        );
-
-
+                List.of(productGetVm), 0, 1, 1, 1, true, Map.of());
 
         when(productService.findProductAdvance(any(ProductCriteriaDto.class)))
-            .thenReturn(mockResponse);
+                .thenReturn(mockResponse);
 
         mockMvc.perform(get("/storefront/catalog-search")
                 .param("keyword", "test")
@@ -72,27 +70,26 @@ class ProductControllerTest {
                 .param("size", "12")
                 .param("sortType", "DEFAULT")
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.products[0].id").value(productGetVm.id()))
-            .andExpect(jsonPath("$.products[0].name").value(productGetVm.name()))
-            .andExpect(jsonPath("$.products[0].slug").value(productGetVm.slug()));
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.products[0].id").value(productGetVm.id()))
+                .andExpect(jsonPath("$.products[0].name").value(productGetVm.name()))
+                .andExpect(jsonPath("$.products[0].slug").value(productGetVm.slug()));
     }
 
     @Test
     void testProductSearchAutoComplete_whenProductNameList_thenReturnProductNameListVm() throws Exception {
 
         ProductNameListVm mockResponse = new ProductNameListVm(
-            List.of(new ProductNameGetVm("Product1"))
-        );
+                List.of(new ProductNameGetVm("Product1")));
         when(productService.autoCompleteProductName(anyString())).thenReturn(mockResponse);
 
         mockMvc.perform(get("/storefront/search_suggest")
                 .param("keyword", "test")
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.productNames[0].name").value("Product1"));
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.productNames[0].name").value("Product1"));
     }
 
 }

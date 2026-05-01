@@ -1,8 +1,11 @@
 package com.yas.location.controller;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
@@ -12,7 +15,10 @@ import tools.jackson.databind.ObjectWriter;
 import com.yas.location.model.Country;
 import com.yas.location.service.CountryService;
 import com.yas.location.utils.Constants;
+import com.yas.location.viewmodel.country.CountryListGetVm;
 import com.yas.location.viewmodel.country.CountryPostVm;
+import com.yas.location.viewmodel.country.CountryVm;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -136,6 +142,42 @@ class CountryControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(request))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetPageableCountries_whenNormalCase_thenReturnOk() throws Exception {
+        CountryListGetVm response = new CountryListGetVm(List.of(), 0, 10, 0, 0, true);
+        given(countryService.getPageableCountries(0, 10)).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.COUNTRIES_URL + "/paging"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testListCountries_whenNormalCase_thenReturnOk() throws Exception {
+        List<CountryVm> response = List.of(new CountryVm(1L, "VN", "Vietnam", "VNM", true, true, true, true, true));
+        given(countryService.findAllCountries()).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.COUNTRIES_URL))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testGetCountry_whenNormalCase_thenReturnOk() throws Exception {
+        CountryVm response = new CountryVm(1L, "VN", "Vietnam", "VNM", true, true, true, true, true);
+        given(countryService.findById(1L)).willReturn(response);
+
+        mockMvc.perform(get(Constants.ApiConstant.COUNTRIES_URL + "/1"))
+            .andExpect(status().isOk())
+            .andExpect(content().json(objectWriter.writeValueAsString(response)));
+    }
+
+    @Test
+    void testDeleteCountry_whenNormalCase_thenReturnNoContent() throws Exception {
+        mockMvc.perform(delete(Constants.ApiConstant.COUNTRIES_URL + "/1"))
+            .andExpect(status().isNoContent());
     }
 
 }

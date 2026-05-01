@@ -162,6 +162,67 @@ class ProductServiceTest {
         verify(elasticsearchOperations).search(any(NativeQuery.class), eq(Product.class));
     }
 
+    @Test
+    void testFindProductAdvance_whenFieldsAreBlank_ShouldSkipFilters() {
+        SearchHits<Product> searchHits = getSearchHits();
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(Product.class))).thenReturn(searchHits);
+
+        ProductCriteriaDto criteriaDto = new ProductCriteriaDto(
+            "test", 0, 10, null, null, null, null, null, SortType.DEFAULT
+        );
+        ProductListGetVm result = productService.findProductAdvance(criteriaDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testFindProductAdvance_whenOnlyMinPrice_ShouldApplyRangeFilter() {
+        SearchHits<Product> searchHits = getSearchHits();
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(Product.class))).thenReturn(searchHits);
+
+        ProductCriteriaDto criteriaDto = new ProductCriteriaDto(
+            "test", 0, 10, null, null, null, 10.0, null, SortType.DEFAULT
+        );
+        ProductListGetVm result = productService.findProductAdvance(criteriaDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testFindProductAdvance_whenOnlyMaxPrice_ShouldApplyRangeFilter() {
+        SearchHits<Product> searchHits = getSearchHits();
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(Product.class))).thenReturn(searchHits);
+
+        ProductCriteriaDto criteriaDto = new ProductCriteriaDto(
+            "test", 0, 10, null, null, null, null, 100.0, SortType.DEFAULT
+        );
+        ProductListGetVm result = productService.findProductAdvance(criteriaDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testFindProductAdvance_whenNoResults_ShouldReturnEmptyList() {
+        SearchHits<Product> searchHits = mock(SearchHits.class);
+        when(searchHits.stream()).thenReturn(java.util.stream.Stream.empty());
+        when(searchHits.hasAggregations()).thenReturn(false);
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(Product.class))).thenReturn(searchHits);
+
+        ProductCriteriaDto criteriaDto = new ProductCriteriaDto(
+            "nonexistent", 0, 10, null, null, null, null, null, SortType.DEFAULT
+        );
+        ProductListGetVm result = productService.findProductAdvance(criteriaDto);
+        assertNotNull(result);
+        assertTrue(result.products().isEmpty());
+    }
+
+    @Test
+    void testProductFieldConstructor_throwsException() throws Exception {
+        java.lang.reflect.Constructor<com.yas.search.constant.ProductField> constructor = 
+            com.yas.search.constant.ProductField.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        java.lang.reflect.InvocationTargetException exception = 
+            org.junit.jupiter.api.Assertions.assertThrows(java.lang.reflect.InvocationTargetException.class, constructor::newInstance);
+        org.junit.jupiter.api.Assertions.assertTrue(exception.getCause() instanceof UnsupportedOperationException);
+    }
+
     private static SearchHits<Product> getSearchHits() {
 
         Product product = Product.builder()

@@ -241,4 +241,29 @@ class RatingServiceTest {
         List<RatingVm>  newResponse = ratingService.getLatestRatings(5);
         assertEquals(0, newResponse.size());
     }
-}
+
+    @Test
+    void createRating_CustomerNotFound_ShouldThrowNotFoundException() {
+        Jwt jwt = mock(Jwt.class);
+        JwtAuthenticationToken authentication = mock(JwtAuthenticationToken.class);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        when(authentication.getToken()).thenReturn(jwt);
+        when(authentication.getName()).thenReturn(userId);
+        when(jwt.getSubject()).thenReturn(userId);
+        when(orderService.checkOrderExistsByProductAndUserWithStatus(anyLong())).
+                thenReturn(new OrderExistsByProductAndUserGetVm(true));
+        when(customerService.getCustomer()).thenReturn(null);
+
+        RatingPostVm ratingPostVm = RatingPostVm.builder().content("comment 4").productName("product3").star(4).productId(3L).build();
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> ratingService.createRating(ratingPostVm));
+
+        assertEquals(String.format("CUSTOMER %s is not found", userId), exception.getMessage());
+    }
+
+    @Test
+    void calculateAverageStar_EmptyResult_ShouldReturnZero() {
+        Double averageStar = ratingService.calculateAverageStar(999L);
+        assertEquals(0.0, averageStar);
+    }
+}

@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -106,4 +107,70 @@ class BrandServiceTest {
             brandService.update(brandPostVm, 1L);
         });
     }
-}
+
+    // Delete a brand successfully when it has no products
+    @Test
+    void test_delete_brand_successfully() {
+        Brand brand = new Brand();
+        brand.setId(1L);
+        brand.setProducts(List.of());
+        when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
+
+        brandService.delete(1L);
+
+        verify(brandRepository).deleteById(1L);
+    }
+
+    // Attempt to delete a brand that does not exist
+    @Test
+    void test_delete_nonexistent_brand() {
+        when(brandRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(NotFoundException.class, () -> {
+            brandService.delete(1L);
+        });
+    }
+
+    // Attempt to delete a brand that has products
+    @Test
+    void test_delete_brand_with_products() {
+        Brand brand = new Brand();
+        brand.setId(1L);
+        brand.setProducts(List.of(new com.yas.product.model.Product()));
+        when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
+
+        Assertions.assertThrows(com.yas.commonlibrary.exception.BadRequestException.class, () -> {
+            brandService.delete(1L);
+        });
+    }
+
+    // Get brands by IDs
+    @Test
+    void test_get_brands_by_ids() {
+        Brand brand1 = new Brand();
+        brand1.setId(1L);
+        brand1.setName("Brand1");
+        brand1.setSlug("brand-1");
+        Brand brand2 = new Brand();
+        brand2.setId(2L);
+        brand2.setName("Brand2");
+        brand2.setSlug("brand-2");
+        when(brandRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(brand1, brand2));
+
+        var result = brandService.getBrandsByIds(List.of(1L, 2L));
+
+        assertEquals(2, result.size());
+        assertEquals("Brand1", result.get(0).name());
+        assertEquals("Brand2", result.get(1).name());
+    }
+
+    // Get brands by empty list of IDs
+    @Test
+    void test_get_brands_by_empty_ids() {
+        when(brandRepository.findAllById(List.of())).thenReturn(List.of());
+
+        var result = brandService.getBrandsByIds(List.of());
+
+        assertEquals(0, result.size());
+    }
+}

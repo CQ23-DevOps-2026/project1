@@ -1,10 +1,18 @@
 package com.yas.customer.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
 class MessagesUtilsTest {
+
+    @Test
+    void testMessagesUtilsConstructor_whenInstantiated_thenObjectCreated() {
+        MessagesUtils messagesUtils = new MessagesUtils();
+
+        assertNotNull(messagesUtils);
+    }
 
     @Test
     void testGetMessageWithValidCode() {

@@ -2,6 +2,7 @@ package com.yas.search.consumer;
 
 import static com.yas.commonlibrary.kafka.cdc.message.Operation.CREATE;
 import static com.yas.commonlibrary.kafka.cdc.message.Operation.DELETE;
+import static com.yas.commonlibrary.kafka.cdc.message.Operation.READ;
 import static com.yas.commonlibrary.kafka.cdc.message.Operation.UPDATE;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,7 +64,6 @@ class ProductSyncDataConsumerTest {
         verify(productSyncDataService, times(1)).updateProduct(productId);
     }
 
-    @Disabled("Handle later once elasticsearch sync delete complete")
     @Test
     void testSync_whenDeleteAction_deleteProduct() {
         // When
@@ -79,4 +79,34 @@ class ProductSyncDataConsumerTest {
         // Then
         verify(productSyncDataService, times(1)).deleteProduct(productId);
     }
+
+    @Test
+    void testSync_whenReadAction_createProduct() {
+        // When
+        long productId = 5L;
+        productSyncDataConsumer.sync(
+            ProductMsgKey.builder().id(productId).build(),
+            ProductCdcMessage.builder()
+                .after(Product.builder().id(productId).build())
+                .op(READ)
+                .build()
+        );
+
+        // Then
+        verify(productSyncDataService, times(1)).createProduct(productId);
+    }
+
+    @Test
+    void testSync_whenNullPayload_deleteProduct() {
+        // When
+        final long productId = 4L;
+        productSyncDataConsumer.sync(
+            ProductMsgKey.builder().id(productId).build(),
+            null
+        );
+
+        // Then
+        verify(productSyncDataService, times(1)).deleteProduct(productId);
+    }
 }
+
