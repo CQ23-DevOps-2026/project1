@@ -349,5 +349,6 @@ class OrderSpecificationTest {
         Predicate predicate = spec.toPredicate(root, query, criteriaBuilder);
         assertNotNull(predicate);
     }
+    
 }
 
