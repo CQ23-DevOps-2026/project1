@@ -12,6 +12,7 @@ public class ProductApplication {
 
     public static void main(String[] args) {
         // CI Note: Test Jenkins SonarQube connection and analysis
+        // CI Note: Test Jenkins SonarQube in VPS
         SpringApplication.run(ProductApplication.class, args);
     }
 
