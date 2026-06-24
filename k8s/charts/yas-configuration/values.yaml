@@ -58,7 +58,7 @@ applicationConfig:
       oauth2:
         resourceserver:
           jwt:
-            issuer-uri: http://identity.yas.local.com/realms/Yas
+            jwk-set-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/certs
 
     datasource:
       url:
@@ -71,8 +71,8 @@ applicationConfig:
 
   springdoc:
     oauthflow:
-      authorization-url: http://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
-      token-url: http://identity.yas.local.com/realms/Yas/protocol/openid-connect/token
+      authorization-url: https://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
+      token-url: https://identity.yas.local.com/realms/Yas/protocol/openid-connect/token
 
   yas:
     services:
@@ -97,7 +97,11 @@ gatewayRoutesConfig:
   spring:
     cloud:
       gateway:
-        routes:
+        server:
+          webflux:
+            default-filters:
+              - SaveSession
+        server.webflux.routes:
           - id: product_api
             uri: http://product
             predicates:
@@ -155,7 +159,7 @@ gatewayRoutesConfig:
               - RewritePath=/api/(?<segment>.*), /$\{segment}
               - TokenRelay=
           - id: promotion_api
-            uri: http://protion
+            uri: http://promotion
             predicates:
               - Path=/api/promotion/**
             filters:
@@ -213,12 +217,18 @@ backofficeBffExtraConfig:
         client:
           provider:
             keycloak:
-              issuer-uri: http://identity.yas.local.com/realms/Yas
+              authorization-uri: https://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
+              token-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/token
+              jwk-set-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/certs
+              user-info-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/userinfo
+              user-name-attribute: preferred_username
           registration:
             api-client:
               provider: keycloak
               client-id: backoffice-bff
               client-secret: ${KEYCLOAK_BACKOFFICE_BFF_CLIENT_SECRET}
+              authorization-grant-type: authorization_code
+              redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
               scope: openid, profile, email, roles
 
 storefrontBffExtraConfig:
@@ -233,12 +243,18 @@ storefrontBffExtraConfig:
         client:
           provider:
             keycloak:
-              issuer-uri: http://identity.yas.local.com/realms/Yas
+              authorization-uri: https://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
+              token-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/token
+              jwk-set-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/certs
+              user-info-uri: http://keycloak-service.keycloak/realms/Yas/protocol/openid-connect/userinfo
+              user-name-attribute: preferred_username
           registration:
             api-client:
               provider: keycloak
               client-id: storefront-bff
               client-secret: ${KEYCLOAK_STOREFRONT_BFF_CLIENT_SECRET}
+              authorization-grant-type: authorization_code
+              redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
               scope: openid, profile, email, roles
 
 # Media application config custom
@@ -252,7 +268,7 @@ mediaApplicationConfig:
 # Customer application config custom
 customerApplicationConfig:
   keycloak:
-    auth-server-url: http://identity.yas.local.com
+    auth-server-url: http://keycloak-service.keycloak
     realm: Yas
     resource: customer-management
     credentials:
