@@ -38,6 +38,7 @@ helm upgrade --install pgadmin ./postgres/pgadmin \
 
 #Install strimzi-kafka-operator
 helm upgrade --install kafka-operator strimzi/strimzi-kafka-operator \
+--version 0.45.2 \
 --create-namespace --namespace kafka
 
 #Install kafka and postgresql connector
@@ -101,9 +102,11 @@ helm upgrade --install promtail grafana/promtail \
 grafana_hostname="grafana.$DOMAIN" yq -i '.hostname=env(grafana_hostname)' ./observability/prometheus.values.yaml
 postgresql_username="$POSTGRESQL_USERNAME" yq -i '.grafana."grafana.ini".database.user=env(postgresql_username)' ./observability/prometheus.values.yaml
 postgresql_password="$POSTGRESQL_PASSWORD" yq -i '.grafana."grafana.ini".database.password=env(postgresql_password)' ./observability/prometheus.values.yaml
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
  --create-namespace --namespace observability \
--f ./observability/prometheus.values.yaml \
+-f ./observability/prometheus.values.yaml
 
 #Install grafana operator
 helm upgrade --install grafana-operator oci://ghcr.io/grafana-operator/helm-charts/grafana-operator \
@@ -113,7 +116,7 @@ helm upgrade --install grafana-operator oci://ghcr.io/grafana-operator/helm-char
 #Add datasource and dashboard to grafana
 helm upgrade --install grafana ./observability/grafana \
 --create-namespace --namespace observability \
---set hotname="grafana.$DOMAIN" \
+--set hostname="grafana.$DOMAIN" \
 --set grafana.username="$GRAFANA_USERNAME" \
 --set grafana.password="$GRAFANA_PASSWORD" \
 --set postgresql.username="$POSTGRESQL_USERNAME" \
