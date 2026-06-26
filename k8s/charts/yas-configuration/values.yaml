@@ -242,6 +242,11 @@ storefrontBffExtraConfig:
               client-id: storefront-bff
               client-secret: ${KEYCLOAK_STOREFRONT_BFF_CLIENT_SECRET}
               scope: openid, profile, email, roles
+            keycloak:
+              provider: keycloak
+              client-id: storefront-bff
+              client-secret: ${KEYCLOAK_STOREFRONT_BFF_CLIENT_SECRET}
+              scope: openid, profile, email, roles
 
 # Media application config custom
 mediaApplicationConfig:
