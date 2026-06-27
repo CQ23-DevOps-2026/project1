@@ -51,6 +51,32 @@ def getChangedServices() {
     return changedServices.toList().sort()
 }
 
+// ─── Detect all Docker image services for main baseline builds ───────────────
+def getAllDockerServices() {
+    def output = sh(
+        script: "find . -maxdepth 2 -name Dockerfile | sed 's#^./##; s#/Dockerfile##' | sort",
+        returnStdout: true
+    ).trim()
+
+    return output ? output.split('\n').toList() : []
+}
+
+def dockerImageNameForService(String service) {
+    if (service == 'backoffice') {
+        return 'yas-backoffice'
+    }
+    if (service == 'storefront') {
+        return 'yas-storefront'
+    }
+    return "yas-${service}"
+}
+
+def isMainBranch() {
+    def branchName = env.BRANCH_NAME ?: ''
+    def gitBranch = env.GIT_BRANCH ?: ''
+    return branchName == 'main' || gitBranch == 'main' || gitBranch == 'origin/main'
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PIPELINE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,6 +92,7 @@ pipeline {
         // Jenkins Credentials (Secret text)
         // - snyk-token: Snyk API token
         SNYK_TOKEN  = credentials('snyk-token')
+        DOCKERHUB_NAMESPACE = 'vinny2707'
     }
 
     options {
@@ -160,11 +187,30 @@ pipeline {
                     def services = getChangedServices()
                     env.CHANGED_SERVICES = services.join(',')
 
+                    if (isMainBranch()) {
+                        def imageServices = getAllDockerServices()
+                        def mavenBuildServices = imageServices.findAll { fileExists("${it}/pom.xml") }
+
+                        env.IMAGE_SERVICES = imageServices.join(',')
+                        env.MAVEN_BUILD_SERVICES = mavenBuildServices.join(',')
+                        env.IMAGE_TAG = 'main'
+
+                        echo '=> Main branch detected: baseline Docker images will be built with tag main.'
+                    } else {
+                        env.IMAGE_SERVICES = ''
+                        env.MAVEN_BUILD_SERVICES = env.CHANGED_SERVICES
+                        env.IMAGE_TAG = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    }
+
                     if (services.isEmpty()) {
                         echo '=> Không phát hiện service nào thay đổi → Test & Build sẽ bị bỏ qua.'
                     } else {
                         echo "=> Services sẽ được xử lý: ${env.CHANGED_SERVICES}"
                     }
+
+                    echo "=> Maven build services: ${env.MAVEN_BUILD_SERVICES ?: '<none>'}"
+                    echo "=> Docker image services: ${env.IMAGE_SERVICES ?: '<none>'}"
+                    echo "=> Docker image tag: ${env.IMAGE_TAG}"
                 }
             }
         }
@@ -280,11 +326,11 @@ pipeline {
         // ==============================================================
         stage('Build') {
             when {
-                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
+                expression { env.MAVEN_BUILD_SERVICES != null && env.MAVEN_BUILD_SERVICES != '' }
             }
             steps {
                 script {
-                    def services        = env.CHANGED_SERVICES.split(',').toList()
+                    def services        = env.MAVEN_BUILD_SERVICES.split(',').toList()
                     def serviceSelector = services.join(',')
                     echo "=> [Build] Đóng gói service: ${serviceSelector}"
 
@@ -294,6 +340,47 @@ pipeline {
                             -am \
                             -DskipTests
                     """
+                }
+            }
+        }
+
+        // ==============================================================
+        // STAGE 4.5: Docker build & push baseline images
+        // - main branch: build all service Dockerfiles and push tag "main"
+        // - Developer branch commit-id images will be added in the next phase
+        // ==============================================================
+        stage('Docker: Build & Push Images') {
+            when {
+                expression { env.IMAGE_SERVICES != null && env.IMAGE_SERVICES != '' }
+            }
+            steps {
+                script {
+                    def services = env.IMAGE_SERVICES.split(',').toList()
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USERNAME',
+                        passwordVariable: 'DOCKERHUB_PASSWORD'
+                    )]) {
+                        sh '''
+                            set -euo pipefail
+                            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+                        '''
+
+                        for (svc in services) {
+                            def imageName = dockerImageNameForService(svc)
+                            def fullImage = "${env.DOCKERHUB_NAMESPACE}/${imageName}:${env.IMAGE_TAG}"
+
+                            sh """
+                                set -euo pipefail
+                                echo "=> Building ${fullImage}"
+                                docker build -t '${fullImage}' './${svc}'
+                                docker push '${fullImage}'
+                            """
+                        }
+
+                        sh 'docker logout || true'
+                    }
                 }
             }
         }
