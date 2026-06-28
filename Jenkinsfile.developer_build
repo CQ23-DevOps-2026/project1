@@ -30,15 +30,15 @@ def resolveImageTag(String service, String branch) {
         return 'main'
     }
 
-    sh "git fetch origin ${shellQuote(normalized)} || true"
+    def ref = "refs/heads/${normalized}"
 
     def shortSha = sh(
-        script: "git log -n 1 --pretty=format:%h origin/${normalized} -- ${shellQuote(service)}",
+        script: "git ls-remote origin ${shellQuote(ref)} | cut -c1-8",
         returnStdout: true
     ).trim()
 
     if (!shortSha) {
-        error("Cannot resolve last commit modifying '${service}' on branch '${normalized}'. Please push the branch/service changes first.")
+        error("Cannot resolve branch '${normalized}' for service '${service}'. Push the branch first.")
     }
 
     return shortSha
