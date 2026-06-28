@@ -192,8 +192,6 @@ pipeline {
         stage('Verify Docker Images') {
             steps {
                 script {
-                    def plan = new JsonSlurperClassic().parseText(env.DEPLOY_PLAN_JSON)
-
                     withCredentials([usernamePassword(
                         credentialsId: 'dockerhub-credentials',
                         usernameVariable: 'DOCKERHUB_USERNAME',
@@ -204,7 +202,7 @@ pipeline {
                             echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                         '''
 
-                        plan.each { item ->
+                        deployPlan.each { item ->
                             sh "docker manifest inspect ${shellQuote(item.imageRef as String)} > /dev/null"
                         }
 
