@@ -1,5 +1,4 @@
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurperClassic
+def deployPlan = []
 
 def dockerNamespace() {
     return 'vinny2707'
@@ -32,8 +31,10 @@ def resolveImageTag(String service, String branch) {
         return 'main'
     }
 
+    def ref = "refs/heads/${normalized}"
+
     def shortSha = sh(
-        script: "git ls-remote origin refs/heads/${shellQuote(normalized)} | awk '{print substr(\\$1,1,8)}'",
+        script: "git ls-remote origin ${shellQuote(ref)} | cut -c1-8",
         returnStdout: true
     ).trim()
 
@@ -47,9 +48,9 @@ def resolveImageTag(String service, String branch) {
 def serviceDefinitions() {
     return [
         [id: 'backoffice',     param: 'BACKOFFICE_BRANCH',     chart: 'backoffice-ui',  release: 'backoffice-ui',  root: 'ui',      image: 'yas-backoffice'],
-        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePort: '31081'],
+        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePort: '32527'],
         [id: 'storefront',     param: 'STOREFRONT_BRANCH',     chart: 'storefront-ui',  release: 'storefront-ui',  root: 'ui',      image: 'yas-storefront'],
-        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePort: '31080'],
+        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePort: '32028'],
         [id: 'cart',           param: 'CART_BRANCH',           chart: 'cart',           release: 'cart',           root: 'backend', image: 'yas-cart'],
         [id: 'customer',       param: 'CUSTOMER_BRANCH',       chart: 'customer',       release: 'customer',       root: 'backend', image: 'yas-customer'],
         [id: 'inventory',      param: 'INVENTORY_BRANCH',      chart: 'inventory',      release: 'inventory',      root: 'backend', image: 'yas-inventory'],
@@ -97,6 +98,7 @@ def helmSetArgs(Map item) {
     def imageRef = item.imageRef as String
     def repository = imageRef.substring(0, imageRef.lastIndexOf(':'))
     def tag = imageRef.substring(imageRef.lastIndexOf(':') + 1)
+
     def args = [
         "--set ${root}.image.repository=${repository}",
         "--set ${root}.image.tag=${tag}",
@@ -111,8 +113,8 @@ def helmSetArgs(Map item) {
     }
 
     if (item.id == 'storefront') {
-        args << "--set ${root}.extraEnvs[0].name=API_BASE_PATH"
-        args << "--set ${root}.extraEnvs[0].value=http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}/api"
+        args << "--set ${root}.extraEnvs\\[0\\].name=API_BASE_PATH"
+        args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}/api"
     }
 
     return args.join(' ')
@@ -177,11 +179,10 @@ pipeline {
         stage('Resolve Image Tags') {
             steps {
                 script {
-                    def plan = buildDeployPlan()
-                    env.DEPLOY_PLAN_JSON = JsonOutput.toJson(plan)
+                    deployPlan = buildDeployPlan()
 
                     echo 'Developer deploy plan:'
-                    plan.each { item ->
+                    deployPlan.each { item ->
                         echo "- ${item.id}: branch=${item.branch}, image=${item.imageRef}"
                     }
                 }
@@ -191,9 +192,7 @@ pipeline {
         stage('Verify Docker Images') {
             steps {
                 script {
-                    def plan = new JsonSlurperClassic().parseText(env.DEPLOY_PLAN_JSON)
-
-                    plan.each { item ->
+                    deployPlan.each { item ->
                         sh "docker manifest inspect ${shellQuote(item.imageRef as String)} > /dev/null"
                     }
                 }
@@ -216,9 +215,7 @@ pipeline {
         stage('Deploy Applications') {
             steps {
                 script {
-                    def plan = new JsonSlurperClassic().parseText(env.DEPLOY_PLAN_JSON)
-
-                    plan.each { item ->
+                    deployPlan.each { item ->
                         def chartPath = "k8s/charts/${item.chart}"
                         def setArgs = helmSetArgs(item as Map)
 
@@ -246,9 +243,7 @@ pipeline {
         stage('Rollout Status') {
             steps {
                 script {
-                    def plan = new JsonSlurperClassic().parseText(env.DEPLOY_PLAN_JSON)
-
-                    plan.each { item ->
+                    deployPlan.each { item ->
                         sh "kubectl rollout status deployment/${shellQuote(item.release as String)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s"
                     }
                 }
