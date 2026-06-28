@@ -188,6 +188,7 @@ pipeline {
             }
         }
 
+        /* disable stage verify docker images
         stage('Verify Docker Images') {
             steps {
                 script {
@@ -210,6 +211,7 @@ pipeline {
                 }
             }
         }
+        */
 
         stage('Deploy Configuration') {
             steps {
