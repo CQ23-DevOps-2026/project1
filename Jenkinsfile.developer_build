@@ -22,7 +22,6 @@ def validateBranchName(String branch) {
         error("Invalid branch name: ${branch}")
     }
 }
-
 def resolveImageTag(String service, String branch) {
     def normalized = normalizeBranch(branch)
     validateBranchName(normalized)
@@ -31,15 +30,15 @@ def resolveImageTag(String service, String branch) {
         return 'main'
     }
 
-    def ref = "refs/heads/${normalized}"
+    sh "git fetch origin ${shellQuote(normalized)} || true"
 
     def shortSha = sh(
-        script: "git ls-remote origin ${shellQuote(ref)} | cut -c1-8",
+        script: "git log -n 1 --pretty=format:%h origin/${normalized} -- ${shellQuote(service)}",
         returnStdout: true
     ).trim()
 
     if (!shortSha) {
-        error("Cannot resolve branch '${normalized}' for service '${service}'. Push the branch first.")
+        error("Cannot resolve last commit modifying '${service}' on branch '${normalized}'. Please push the branch/service changes first.")
     }
 
     return shortSha
