@@ -101,9 +101,22 @@ def helmSetArgs(Map item) {
     def args = [
         "--set ${root}.image.repository=${repository}",
         "--set ${root}.image.tag=${tag}",
-        "--set ${root}.image.pullPolicy=Always",
-        "--set ${root}.ingress.enabled=false"
+        "--set ${root}.image.pullPolicy=Always"
     ]
+
+    if (item.id == 'storefront') {
+        args << "--set ${root}.ingress.enabled=false"
+    } else if (item.id == 'backoffice') {
+        args << "--set ${root}.ingress.enabled=false"
+    } else if (item.id == 'storefront-bff') {
+        args << "--set ${root}.ingress.enabled=true"
+        args << "--set ${root}.ingress.host=${params.STOREFRONT_HOST}"
+    } else if (item.id == 'backoffice-bff') {
+        args << "--set ${root}.ingress.enabled=true"
+        args << "--set ${root}.ingress.host=${params.BACKOFFICE_HOST}"
+    } else {
+        args << "--set ${root}.ingress.enabled=false"
+    }
 
     if (item.nodePort) {
         args << "--set ${root}.service.type=NodePort"
@@ -136,9 +149,9 @@ pipeline {
 
     parameters {
         string(name: 'WORKER_NODE_HOST', defaultValue: '35.247.188.122', description: 'Public IP/domain of the Kubernetes worker node')
-        string(name: 'STOREFRONT_HOST', defaultValue: 'storefront-dev.yas.local.com', description: 'Developer storefront domain')
-        string(name: 'BACKOFFICE_HOST', defaultValue: 'backoffice-dev.yas.local.com', description: 'Developer backoffice domain')
-        string(name: 'API_HOST', defaultValue: 'api-dev.yas.local.com', description: 'Developer API domain')
+        string(name: 'STOREFRONT_HOST', defaultValue: 'storefront.yas.local.com', description: 'Developer storefront domain')
+        string(name: 'BACKOFFICE_HOST', defaultValue: 'backoffice.yas.local.com', description: 'Developer backoffice domain')
+        string(name: 'API_HOST', defaultValue: 'api.yas.local.com', description: 'Developer API domain')
         string(name: 'STOREFRONT_NODE_PORT', defaultValue: '31080', description: 'NodePort for storefront-bff')
         string(name: 'BACKOFFICE_NODE_PORT', defaultValue: '31081', description: 'NodePort for backoffice-bff')
 
