@@ -226,20 +226,6 @@ pipeline {
             }
         }
 
-        stage('Expose Developer NodePorts') {
-            steps {
-                sh '''
-                    set -eu
-
-                    kubectl patch svc storefront-bff -n "$DEPLOY_NAMESPACE" --type=json \
-                        -p="[{\"op\":\"replace\",\"path\":\"/spec/ports/0/nodePort\",\"value\":${STOREFRONT_NODE_PORT}}]"
-
-                    kubectl patch svc backoffice-bff -n "$DEPLOY_NAMESPACE" --type=json \
-                        -p="[{\"op\":\"replace\",\"path\":\"/spec/ports/0/nodePort\",\"value\":${BACKOFFICE_NODE_PORT}}]"
-                '''
-            }
-        }
-
         stage('Rollout Status') {
             steps {
                 script {
