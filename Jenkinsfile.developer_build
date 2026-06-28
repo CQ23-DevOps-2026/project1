@@ -48,9 +48,9 @@ def resolveImageTag(String service, String branch) {
 def serviceDefinitions() {
     return [
         [id: 'backoffice',     param: 'BACKOFFICE_BRANCH',     chart: 'backoffice-ui',  release: 'backoffice-ui',  root: 'ui',      image: 'yas-backoffice'],
-        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePort: '32527'],
+        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePort: '31081'],
         [id: 'storefront',     param: 'STOREFRONT_BRANCH',     chart: 'storefront-ui',  release: 'storefront-ui',  root: 'ui',      image: 'yas-storefront'],
-        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePort: '32028'],
+        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePort: '31080'],
         [id: 'cart',           param: 'CART_BRANCH',           chart: 'cart',           release: 'cart',           root: 'backend', image: 'yas-cart'],
         [id: 'customer',       param: 'CUSTOMER_BRANCH',       chart: 'customer',       release: 'customer',       root: 'backend', image: 'yas-customer'],
         [id: 'inventory',      param: 'INVENTORY_BRANCH',      chart: 'inventory',      release: 'inventory',      root: 'backend', image: 'yas-inventory'],
@@ -192,8 +192,23 @@ pipeline {
         stage('Verify Docker Images') {
             steps {
                 script {
-                    deployPlan.each { item ->
-                        sh "docker manifest inspect ${shellQuote(item.imageRef as String)} > /dev/null"
+                    def plan = new JsonSlurperClassic().parseText(env.DEPLOY_PLAN_JSON)
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USERNAME',
+                        passwordVariable: 'DOCKERHUB_PASSWORD'
+                    )]) {
+                        sh '''
+                            set -euo pipefail
+                            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+                        '''
+
+                        plan.each { item ->
+                            sh "docker manifest inspect ${shellQuote(item.imageRef as String)} > /dev/null"
+                        }
+
+                        sh 'docker logout || true'
                     }
                 }
             }
