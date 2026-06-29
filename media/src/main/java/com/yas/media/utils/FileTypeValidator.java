@@ -21,7 +21,6 @@ public class FileTypeValidator implements ConstraintValidator<ValidFileType, Mul
     }
 
     @Override
-    @SneakyThrows
     public boolean isValid(MultipartFile file, ConstraintValidatorContext context) {
         if (file == null || file.getContentType() == null) {
             context.disableDefaultConstraintViolation();

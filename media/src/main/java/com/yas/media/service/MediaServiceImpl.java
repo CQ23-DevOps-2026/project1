@@ -31,7 +31,6 @@ public class MediaServiceImpl implements MediaService {
     private final YasConfig yasConfig;
 
     @Override
-    @SneakyThrows
     public Media saveMedia(MediaPostVm mediaPostVm) {
         Media media = new Media();
         media.setCaption(mediaPostVm.caption());
@@ -42,9 +41,15 @@ public class MediaServiceImpl implements MediaService {
         } else {
             media.setFileName(mediaPostVm.multipartFile().getOriginalFilename());
         }
-        String filePath = fileSystemRepository.persistFile(media.getFileName(),
-            mediaPostVm.multipartFile().getBytes());
-        media.setFilePath(filePath);
+        
+        byte[] bytes;
+        try {
+            bytes = mediaPostVm.multipartFile().getBytes();
+            String filePath = fileSystemRepository.persistFile(media.getFileName(), bytes);
+            media.setFilePath(filePath);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return mediaRepository.save(media);
     }

@@ -33,7 +33,6 @@ public class FileSystemRepository {
         return filePath.toString();
     }
 
-    @SneakyThrows
     public InputStream getFile(String filePath) {
         Path path = Paths.get(filePath);
         if (!Files.exists(path)) {
