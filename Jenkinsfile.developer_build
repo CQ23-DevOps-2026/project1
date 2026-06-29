@@ -126,7 +126,7 @@ def helmSetArgs(Map item) {
 
     if (item.id == 'storefront') {
         args << "--set ${root}.extraEnvs\\[0\\].name=API_BASE_PATH"
-        args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}/api"
+        args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}/api"
     }
 
     return args.join(' ')
