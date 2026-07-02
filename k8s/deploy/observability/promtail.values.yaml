@@ -1,6 +1,10 @@
 config:
   clients:
-    - url: http://opentelemetry-collector:3500/loki/api/v1/push
+    - url: http://loki-gateway/loki/api/v1/push
   snippets:
     pipelineStages:
       - docker: {}
+    extraRelabelConfigs:
+      - source_labels:
+          - app
+        target_label: service_name

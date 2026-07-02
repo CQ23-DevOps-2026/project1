@@ -1,22 +1,23 @@
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDatasource
+apiVersion: v1
+kind: ConfigMap
 metadata:
   name: loki-datasource
-spec:
-  instanceSelector:
-    matchLabels:
-      dashboards: "grafana"
-  datasource:
-    name: Loki
-    type: loki
-    uid: loki
-    url: http://loki-gateway
-    access: proxy
-    jsonData:
-      httpMethod: GET
-      maxLines: 1000
-      derivedFields:
-        - datasourceUid: tempo
-          matcherRegex: traceId=(\w*)
-          name: traceId
-          url: ${__value.raw}
+  labels:
+    grafana_datasource: "1"
+data:
+  loki-datasource.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://loki-gateway
+        access: proxy
+        jsonData:
+          httpMethod: GET
+          maxLines: 1000
+          derivedFields:
+            - datasourceUid: tempo
+              matcherRegex: traceId=(\w*)
+              name: traceId
+              url: ${__value.raw}

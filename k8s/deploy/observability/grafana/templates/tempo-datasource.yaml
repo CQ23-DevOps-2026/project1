@@ -1,26 +1,27 @@
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDatasource
+apiVersion: v1
+kind: ConfigMap
 metadata:
   name: tempo-datasource
-spec:
-  instanceSelector:
-    matchLabels:
-      dashboards: "grafana"
-  datasource:
-    name: Tempo
-    type: tempo
-    uid: tempo
-    access: proxy
-    url: http://tempo:3100
-    jsonData:
-      httpMethod: GET
-      tracesToLogsV2:
-        datasourceUid: loki
-      serviceMap:
-        datasourceUid: prometheus
-      nodeGraph:
-        enabled: true
-      search:
-        hide: false
-      lokiSearch:
-        datasourceUid: loki
+  labels:
+    grafana_datasource: "1"
+data:
+  tempo-datasource.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        access: proxy
+        url: http://tempo:3200
+        jsonData:
+          httpMethod: GET
+          tracesToLogsV2:
+            datasourceUid: loki
+          serviceMap:
+            datasourceUid: prometheus
+          nodeGraph:
+            enabled: true
+          search:
+            hide: false
+          lokiSearch:
+            datasourceUid: loki

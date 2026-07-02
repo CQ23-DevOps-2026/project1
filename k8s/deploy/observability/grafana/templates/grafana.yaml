@@ -8,8 +8,8 @@ spec:
   external:
     url: http://prometheus-grafana
     adminPassword:
-      name: grafana-admin-credentials
-      key: password
+      name: prometheus-grafana    # Đổi sang Secret thực tế của Grafana
+      key: admin-password        # Đổi key sang admin-password
     adminUser:
-      name: grafana-admin-credentials
-      key: username
+      name: prometheus-grafana    # Đổi sang Secret thực tế của Grafana
+      key: admin-user            # Đổi key sang admin-user
