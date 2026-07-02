@@ -68,6 +68,7 @@ class OrderServiceTest {
     void setUp() {
         order = Instancio.of(Order.class)
                 .set(field(Order::getId), 1L)
+                .set(field(Order::getOrderStatus), OrderStatus.PENDING)
                 .create();
         orderItem = Instancio.of(OrderItem.class)
                 .set(field(OrderItem::getOrderId), 1L)
