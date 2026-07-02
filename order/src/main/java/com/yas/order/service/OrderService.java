@@ -64,6 +64,12 @@ public class OrderService {
     private final PromotionService promotionService;
 
     public OrderVm createOrder(OrderPostVm orderPostVm) {
+        var existingOrder = orderRepository.findByCheckoutId(orderPostVm.checkoutId());
+        if (existingOrder.isPresent()) {
+            Order order = existingOrder.get();
+            List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
+            return OrderVm.fromModel(order, new HashSet<>(orderItems));
+        }
 
         OrderAddressPostVm billingAddressPostVm = orderPostVm.billingAddressPostVm();
         OrderAddress billOrderAddress = OrderAddress.builder()
