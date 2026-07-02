@@ -19,7 +19,6 @@ import com.yas.customer.viewmodel.address.AddressPostVm;
 import com.yas.customer.viewmodel.address.AddressVm;
 import com.yas.customer.viewmodel.useraddress.UserAddressVm;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ class UserAddressServiceTest {
     @Test
     void testGetAddressDefault_whenNoDefaultAddress_thenThrowNotFoundException() {
         setUpSecurityContext(USER_ID);
-        when(userAddressRepository.findByUserIdAndIsActiveTrue(USER_ID)).thenReturn(Optional.empty());
+        when(userAddressRepository.findAllByUserIdAndIsActiveTrueOrderByIdAsc(USER_ID)).thenReturn(List.of());
 
         assertThrows(NotFoundException.class, () -> userAddressService.getAddressDefault());
     }
@@ -96,7 +95,7 @@ class UserAddressServiceTest {
         setUpSecurityContext(USER_ID);
         UserAddress userAddress = UserAddress.builder().id(1L).userId(USER_ID).addressId(33L).isActive(true).build();
         AddressDetailVm addressDetailVm = addressDetailVm(33L, "Default Address");
-        when(userAddressRepository.findByUserIdAndIsActiveTrue(USER_ID)).thenReturn(Optional.of(userAddress));
+        when(userAddressRepository.findAllByUserIdAndIsActiveTrueOrderByIdAsc(USER_ID)).thenReturn(List.of(userAddress));
         when(locationService.getAddressById(33L)).thenReturn(addressDetailVm);
 
         AddressDetailVm result = userAddressService.getAddressDefault();

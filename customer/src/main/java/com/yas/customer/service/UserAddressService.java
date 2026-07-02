@@ -59,8 +59,16 @@ public class UserAddressService {
             throw new AccessDeniedException(Constants.ErrorCode.UNAUTHENTICATED);
         }
 
-        UserAddress userAddress = userAddressRepository.findByUserIdAndIsActiveTrue(userId)
-            .orElseThrow(() -> new NotFoundException(Constants.ErrorCode.USER_ADDRESS_NOT_FOUND));
+        List<UserAddress> activeAddresses = userAddressRepository.findAllByUserIdAndIsActiveTrueOrderByIdAsc(userId);
+        if (activeAddresses.isEmpty()) {
+            throw new NotFoundException(Constants.ErrorCode.USER_ADDRESS_NOT_FOUND);
+        }
+
+        UserAddress userAddress = activeAddresses.getFirst();
+        if (activeAddresses.size() > 1) {
+            activeAddresses.stream().skip(1).forEach(address -> address.setIsActive(false));
+            userAddressRepository.saveAll(activeAddresses);
+        }
 
         return locationService.getAddressById(userAddress.getAddressId());
     }
