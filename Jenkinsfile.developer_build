@@ -269,18 +269,18 @@ pipeline {
                     helm dependency build k8s/charts/swagger-ui || true
 
                     cat > /tmp/swagger-ui-developer-values.yaml <<EOF
-urls: "[{ url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/product/v3/api-docs', name: 'Product' },
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/media/v3/api-docs', name: 'Media' },
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/customer/v3/api-docs', name: 'Customer' },
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/cart/v3/api-docs', name: 'Cart'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/rating/v3/api-docs', name: 'Rating' },
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/order/v3/api-docs', name: 'Order'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/payment/v3/api-docs', name: 'Payment'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/location/v3/api-docs', name: 'Location'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/inventory/v3/api-docs', name: 'Inventory'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/tax/v3/api-docs', name: 'Tax' },
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/promotion/v3/api-docs', name: 'Promotion'},
-      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/search/v3/api-docs', name: 'Search'}]"
+urls: '[{"url":"/api/product/v3/api-docs","name":"Product"},
+      {"url":"/api/media/v3/api-docs","name":"Media"},
+      {"url":"/api/customer/v3/api-docs","name":"Customer"},
+      {"url":"/api/cart/v3/api-docs","name":"Cart"},
+      {"url":"/api/rating/v3/api-docs","name":"Rating"},
+      {"url":"/api/order/v3/api-docs","name":"Order"},
+      {"url":"/api/payment/v3/api-docs","name":"Payment"},
+      {"url":"/api/location/v3/api-docs","name":"Location"},
+      {"url":"/api/inventory/v3/api-docs","name":"Inventory"},
+      {"url":"/api/tax/v3/api-docs","name":"Tax"},
+      {"url":"/api/promotion/v3/api-docs","name":"Promotion"},
+      {"url":"/api/search/v3/api-docs","name":"Search"}]'
 EOF
 
                     helm upgrade --install swagger-ui k8s/charts/swagger-ui \
@@ -325,22 +325,16 @@ EOF
                     echo "Storefront: http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT"
                     echo "Backoffice:  http://$BACKOFFICE_HOST:$BACKOFFICE_NODE_PORT"
                     echo ""
-                    SWAGGER_NODE_PORT=$(kubectl get svc swagger-ui -n "$DEPLOY_NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')
-
                     echo "Example API through storefront-bff:"
                     echo "http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
-                    echo "Swagger UI: http://$API_HOST:$SWAGGER_NODE_PORT/swagger-ui/"
+                    echo "Swagger UI: http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/swagger-ui/"
                 '''
 
                 script {
-                    def swaggerPort = sh(
-                        script: "kubectl get svc swagger-ui -n ${env.DEPLOY_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'",
-                        returnStdout: true
-                    ).trim()
                     def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
                     def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
                     def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
-                    def swaggerUrl = "http://${params.API_HOST}:${swaggerPort}/swagger-ui/"
+                    def swaggerUrl = "${storefrontUrl}/swagger-ui/"
 
                     currentBuild.displayName = "#${currentBuild.number} ${env.DEPLOY_NAMESPACE}"
                     currentBuild.description = """

@@ -295,6 +295,10 @@ gatewayRoutesConfig:
                   - Path=/sampledata/**
                 filters:
                   - TokenRelay=
+              - id: swagger_ui
+                uri: http://swagger-ui:8080
+                predicates:
+                  - Path=/swagger-ui/**
               - id: ui
                 uri: ${UI_HOST}
                 predicates:
