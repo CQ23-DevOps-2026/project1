@@ -127,6 +127,13 @@ def helmSetArgs(Map item) {
         args << "--set ${root}.extraEnvs\\[0\\].name=API_BASE_PATH"
         args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}/api"
     }
+    if (item.id == 'media') {
+        args << "--set ${root}.extraApplicationConfigPaths\\[0\\]=/opt/yas/media-developer/application.yaml"
+        args << "--set ${root}.extraVolumes\\[0\\].name=media-developer-config"
+        args << "--set ${root}.extraVolumes\\[0\\].configMap.name=media-developer-configmap"
+        args << "--set ${root}.extraVolumeMounts\\[0\\].name=media-developer-config"
+        args << "--set ${root}.extraVolumeMounts\\[0\\].mountPath=/opt/yas/media-developer"
+    }
 
     return args.join(' ')
 }
@@ -232,6 +239,16 @@ pipeline {
                     helm dependency build k8s/charts/yas-configuration
                     helm upgrade --install yas-configuration k8s/charts/yas-configuration \
                         --namespace "$DEPLOY_NAMESPACE" --create-namespace
+
+                    cat > /tmp/media-developer-application.yaml <<EOF
+yas:
+  publicUrl: http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/media
+EOF
+
+                    kubectl create configmap media-developer-configmap \
+                        --namespace "$DEPLOY_NAMESPACE" \
+                        --from-file=application.yaml=/tmp/media-developer-application.yaml \
+                        --dry-run=client -o yaml | kubectl apply -f -
                 '''
             }
         }
