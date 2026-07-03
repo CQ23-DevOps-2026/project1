@@ -293,11 +293,12 @@ pipeline {
                     def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
                     def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
 
+                    currentBuild.displayName = "#${currentBuild.number} ${env.DEPLOY_NAMESPACE}"
                     currentBuild.description = """
                         <b>Developer URLs</b><br/>
-                        Storefront: <a href="${storefrontUrl}">${storefrontUrl}</a><br/>
-                        Backoffice: <a href="${backofficeUrl}">${backofficeUrl}</a><br/>
-                        API test: <a href="${apiExampleUrl}">featured products</a>
+                        <a href="${storefrontUrl}">Storefront</a>: ${storefrontUrl}<br/>
+                        <a href="${backofficeUrl}">Backoffice</a>: ${backofficeUrl}<br/>
+                        <a href="${apiExampleUrl}">API smoke test</a>
                     """.stripIndent().trim()
                 }
             }
