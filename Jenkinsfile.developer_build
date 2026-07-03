@@ -47,8 +47,9 @@ def resolveImageTag(String service, String branch) {
 def serviceDefinitions() {
     return [
         [id: 'backoffice',     param: 'BACKOFFICE_BRANCH',     chart: 'backoffice-ui',  release: 'backoffice-ui',  root: 'ui',      image: 'yas-backoffice'],
-        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePort: '31081'],
-        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePort: '31080'],
+        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePortParam: 'BACKOFFICE_NODE_PORT'],
+        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'STOREFRONT_NODE_PORT'],
+        [id: 'api-gateway',    param: 'API_GATEWAY_BRANCH',    chart: 'api-gateway',    release: 'api-gateway',    root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'API_NODE_PORT'],
         [id: 'storefront',     param: 'STOREFRONT_BRANCH',     chart: 'storefront-ui',  release: 'storefront-ui',  root: 'ui',      image: 'yas-storefront'],
         [id: 'cart',           param: 'CART_BRANCH',           chart: 'cart',           release: 'cart',           root: 'backend', image: 'yas-cart'],
         [id: 'customer',       param: 'CUSTOMER_BRANCH',       chart: 'customer',       release: 'customer',       root: 'backend', image: 'yas-customer'],
@@ -85,7 +86,7 @@ def buildDeployPlan() {
             release: svc.release,
             root: svc.root,
             imageRef: "${namespace}/${svc.image}:${tag}",
-            nodePort: svc.nodePort ?: ''
+            nodePort: svc.nodePortParam ? (params[svc.nodePortParam] as String) : (svc.nodePort ?: '')
         ]
     }
 
@@ -153,11 +154,13 @@ pipeline {
         string(name: 'API_HOST', defaultValue: 'api.yas.local.com', description: 'Developer API domain')
         string(name: 'STOREFRONT_NODE_PORT', defaultValue: '31080', description: 'NodePort for storefront-bff')
         string(name: 'BACKOFFICE_NODE_PORT', defaultValue: '31081', description: 'NodePort for backoffice-bff')
+        string(name: 'API_NODE_PORT', defaultValue: '31082', description: 'NodePort for api-gateway')
 
         string(name: 'BACKOFFICE_BRANCH', defaultValue: 'main', description: 'Branch for backoffice image')
         string(name: 'BACKOFFICE_BFF_BRANCH', defaultValue: 'main', description: 'Branch for backoffice-bff image')
         string(name: 'STOREFRONT_BRANCH', defaultValue: 'main', description: 'Branch for storefront image')
         string(name: 'STOREFRONT_BFF_BRANCH', defaultValue: 'main', description: 'Branch for storefront-bff image')
+        string(name: 'API_GATEWAY_BRANCH', defaultValue: 'main', description: 'Branch for api-gateway image')
         string(name: 'CART_BRANCH', defaultValue: 'main', description: 'Branch for cart image')
         string(name: 'CUSTOMER_BRANCH', defaultValue: 'main', description: 'Branch for customer image')
         string(name: 'INVENTORY_BRANCH', defaultValue: 'main', description: 'Branch for inventory image')
@@ -286,7 +289,7 @@ EOF
                     helm upgrade --install swagger-ui k8s/charts/swagger-ui \
                         --namespace "$DEPLOY_NAMESPACE" --create-namespace \
                         -f /tmp/swagger-ui-developer-values.yaml \
-                        --set service.type=NodePort \
+                        --set service.type=ClusterIP \
                         --set ingress.enabled=false
                 '''
             }
@@ -325,22 +328,25 @@ EOF
                     echo "Storefront: http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT"
                     echo "Backoffice:  http://$BACKOFFICE_HOST:$BACKOFFICE_NODE_PORT"
                     echo ""
-                    echo "Example API through storefront-bff:"
-                    echo "http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
-                    echo "Swagger UI: http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/swagger-ui/"
+                    echo "Example API through api-gateway:"
+                    echo "http://$API_HOST:$API_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
+                    echo "API Gateway: http://$API_HOST:$API_NODE_PORT"
+                    echo "Swagger UI: http://$API_HOST:$API_NODE_PORT/swagger-ui/"
                 '''
 
                 script {
                     def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
                     def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
-                    def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
-                    def swaggerUrl = "${storefrontUrl}/swagger-ui/"
+                    def apiGatewayUrl = "http://${params.API_HOST}:${params.API_NODE_PORT}"
+                    def apiExampleUrl = "${apiGatewayUrl}/api/product/storefront/products/featured?pageNo=0"
+                    def swaggerUrl = "${apiGatewayUrl}/swagger-ui/"
 
                     currentBuild.displayName = "#${currentBuild.number} ${env.DEPLOY_NAMESPACE}"
                     currentBuild.description = """
                         <b>Developer URLs</b><br/>
                         <a href="${storefrontUrl}">Storefront</a>: ${storefrontUrl}<br/>
                         <a href="${backofficeUrl}">Backoffice</a>: ${backofficeUrl}<br/>
+                        <a href="${apiGatewayUrl}">API Gateway</a>: ${apiGatewayUrl}<br/>
                         <a href="${swaggerUrl}">Swagger UI</a>: ${swaggerUrl}<br/>
                         <a href="${apiExampleUrl}">API smoke test</a>
                     """.stripIndent().trim()
