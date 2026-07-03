@@ -120,6 +120,7 @@ def helmSetArgs(Map item) {
 
     if (item.nodePort) {
         args << "--set ${root}.service.type=NodePort"
+        args << "--set ${root}.service.nodePort=${item.nodePort}"
     } else {
         args << "--set ${root}.service.type=ClusterIP"
     }
@@ -286,6 +287,20 @@ pipeline {
                     echo "Example API through storefront-bff:"
                     echo "http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
                 '''
+
+                script {
+                    def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
+                    def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
+                    def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
+
+                    currentBuild.displayName = "#${currentBuild.number} ${env.DEPLOY_NAMESPACE}"
+                    currentBuild.description = """
+                        <b>Developer URLs</b><br/>
+                        <a href="${storefrontUrl}">Storefront</a>: ${storefrontUrl}<br/>
+                        <a href="${backofficeUrl}">Backoffice</a>: ${backofficeUrl}<br/>
+                        <a href="${apiExampleUrl}">API smoke test</a>
+                    """.stripIndent().trim()
+                }
             }
         }
     }
