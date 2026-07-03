@@ -125,7 +125,7 @@ def helmSetArgs(Map item) {
 
     if (item.id == 'storefront') {
         args << "--set ${root}.extraEnvs\\[0\\].name=API_BASE_PATH"
-        args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}/api"
+        args << "--set ${root}.extraEnvs\\[0\\].value=http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}/api"
     }
 
     return args.join(' ')
@@ -255,8 +255,25 @@ pipeline {
                 sh '''
                     set -eu
                     helm dependency build k8s/charts/swagger-ui || true
+
+                    cat > /tmp/swagger-ui-developer-values.yaml <<EOF
+urls: "[{ url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/product/v3/api-docs', name: 'Product' },
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/media/v3/api-docs', name: 'Media' },
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/customer/v3/api-docs', name: 'Customer' },
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/cart/v3/api-docs', name: 'Cart'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/rating/v3/api-docs', name: 'Rating' },
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/order/v3/api-docs', name: 'Order'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/payment/v3/api-docs', name: 'Payment'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/location/v3/api-docs', name: 'Location'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/inventory/v3/api-docs', name: 'Inventory'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/tax/v3/api-docs', name: 'Tax' },
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/promotion/v3/api-docs', name: 'Promotion'},
+      { url: 'http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/search/v3/api-docs', name: 'Search'}]"
+EOF
+
                     helm upgrade --install swagger-ui k8s/charts/swagger-ui \
                         --namespace "$DEPLOY_NAMESPACE" --create-namespace \
+                        -f /tmp/swagger-ui-developer-values.yaml \
                         --set service.type=NodePort \
                         --set ingress.enabled=false
                 '''
