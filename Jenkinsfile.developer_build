@@ -287,6 +287,19 @@ pipeline {
                     echo "Example API through storefront-bff:"
                     echo "http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
                 '''
+
+                script {
+                    def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
+                    def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
+                    def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
+
+                    currentBuild.description = """
+                        <b>Developer URLs</b><br/>
+                        Storefront: <a href="${storefrontUrl}">${storefrontUrl}</a><br/>
+                        Backoffice: <a href="${backofficeUrl}">${backofficeUrl}</a><br/>
+                        API test: <a href="${apiExampleUrl}">featured products</a>
+                    """.stripIndent().trim()
+                }
             }
         }
     }
