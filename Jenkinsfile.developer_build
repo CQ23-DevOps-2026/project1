@@ -47,9 +47,9 @@ def resolveImageTag(String service, String branch) {
 def serviceDefinitions() {
     return [
         [id: 'backoffice',     param: 'BACKOFFICE_BRANCH',     chart: 'backoffice-ui',  release: 'backoffice-ui',  root: 'ui',      image: 'yas-backoffice'],
-        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePortParam: 'BACKOFFICE_NODE_PORT'],
-        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'STOREFRONT_NODE_PORT'],
-        [id: 'api-gateway',    param: 'API_GATEWAY_BRANCH',    chart: 'api-gateway',    release: 'api-gateway',    root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'API_NODE_PORT'],
+        [id: 'backoffice-bff', param: 'BACKOFFICE_BFF_BRANCH', chart: 'backoffice-bff', release: 'backoffice-bff', root: 'backend', image: 'yas-backoffice-bff', nodePortParam: 'BACKOFFICE_NODE_PORT', nodePortDefault: '31081'],
+        [id: 'storefront-bff', param: 'STOREFRONT_BFF_BRANCH', chart: 'storefront-bff', release: 'storefront-bff', root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'STOREFRONT_NODE_PORT', nodePortDefault: '31080'],
+        [id: 'api-gateway',    param: 'API_GATEWAY_BRANCH',    chart: 'api-gateway',    release: 'api-gateway',    root: 'backend', image: 'yas-storefront-bff', nodePortParam: 'API_NODE_PORT', nodePortDefault: '31082'],
         [id: 'storefront',     param: 'STOREFRONT_BRANCH',     chart: 'storefront-ui',  release: 'storefront-ui',  root: 'ui',      image: 'yas-storefront'],
         [id: 'cart',           param: 'CART_BRANCH',           chart: 'cart',           release: 'cart',           root: 'backend', image: 'yas-cart'],
         [id: 'customer',       param: 'CUSTOMER_BRANCH',       chart: 'customer',       release: 'customer',       root: 'backend', image: 'yas-customer'],
@@ -86,7 +86,7 @@ def buildDeployPlan() {
             release: svc.release,
             root: svc.root,
             imageRef: "${namespace}/${svc.image}:${tag}",
-            nodePort: svc.nodePortParam ? (params[svc.nodePortParam] as String) : (svc.nodePort ?: '')
+            nodePort: svc.nodePortParam ? ((params[svc.nodePortParam] ?: svc.nodePortDefault) as String) : (svc.nodePort ?: '')
         ]
     }
 
@@ -310,6 +310,7 @@ EOF
             steps {
                 sh '''
                     set -eu
+                    API_NODE_PORT="${API_NODE_PORT:-31082}"
 
                     echo "=== Developer namespace pods ==="
                     kubectl get pods -n "$DEPLOY_NAMESPACE" -o wide
@@ -337,7 +338,8 @@ EOF
                 script {
                     def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
                     def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
-                    def apiGatewayUrl = "http://${params.API_HOST}:${params.API_NODE_PORT}"
+                    def apiNodePort = params.API_NODE_PORT ?: '31082'
+                    def apiGatewayUrl = "http://${params.API_HOST}:${apiNodePort}"
                     def apiExampleUrl = "${apiGatewayUrl}/api/product/storefront/products/featured?pageNo=0"
                     def swaggerUrl = "${apiGatewayUrl}/swagger-ui/"
 
