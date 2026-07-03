@@ -120,6 +120,7 @@ def helmSetArgs(Map item) {
 
     if (item.nodePort) {
         args << "--set ${root}.service.type=NodePort"
+        args << "--set ${root}.service.nodePort=${item.nodePort}"
     } else {
         args << "--set ${root}.service.type=ClusterIP"
     }
