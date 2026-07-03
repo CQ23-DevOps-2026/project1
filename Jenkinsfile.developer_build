@@ -109,11 +109,9 @@ def helmSetArgs(Map item) {
     } else if (item.id == 'backoffice') {
         args << "--set ${root}.ingress.enabled=false"
     } else if (item.id == 'storefront-bff') {
-        args << "--set ${root}.ingress.enabled=true"
-        args << "--set ${root}.ingress.host=${params.STOREFRONT_HOST}"
+        args << "--set ${root}.ingress.enabled=false"
     } else if (item.id == 'backoffice-bff') {
-        args << "--set ${root}.ingress.enabled=true"
-        args << "--set ${root}.ingress.host=${params.BACKOFFICE_HOST}"
+        args << "--set ${root}.ingress.enabled=false"
     } else {
         args << "--set ${root}.ingress.enabled=false"
     }
@@ -252,12 +250,26 @@ pipeline {
             }
         }
 
+        stage('Deploy Swagger UI') {
+            steps {
+                sh '''
+                    set -eu
+                    helm dependency build k8s/charts/swagger-ui || true
+                    helm upgrade --install swagger-ui k8s/charts/swagger-ui \
+                        --namespace "$DEPLOY_NAMESPACE" --create-namespace \
+                        --set service.type=NodePort \
+                        --set ingress.enabled=false
+                '''
+            }
+        }
+
         stage('Rollout Status') {
             steps {
                 script {
                     deployPlan.each { item ->
                         sh "kubectl rollout status deployment/${shellQuote(item.release as String)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s"
                     }
+                    sh "kubectl rollout status deployment/swagger-ui -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s"
                 }
             }
         }
@@ -284,20 +296,29 @@ pipeline {
                     echo "Storefront: http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT"
                     echo "Backoffice:  http://$BACKOFFICE_HOST:$BACKOFFICE_NODE_PORT"
                     echo ""
+                    SWAGGER_NODE_PORT=$(kubectl get svc swagger-ui -n "$DEPLOY_NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')
+
                     echo "Example API through storefront-bff:"
                     echo "http://$STOREFRONT_HOST:$STOREFRONT_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
+                    echo "Swagger UI: http://$API_HOST:$SWAGGER_NODE_PORT/swagger-ui/"
                 '''
 
                 script {
+                    def swaggerPort = sh(
+                        script: "kubectl get svc swagger-ui -n ${env.DEPLOY_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'",
+                        returnStdout: true
+                    ).trim()
                     def storefrontUrl = "http://${params.STOREFRONT_HOST}:${params.STOREFRONT_NODE_PORT}"
                     def backofficeUrl = "http://${params.BACKOFFICE_HOST}:${params.BACKOFFICE_NODE_PORT}"
                     def apiExampleUrl = "${storefrontUrl}/api/product/storefront/products/featured?pageNo=0"
+                    def swaggerUrl = "http://${params.API_HOST}:${swaggerPort}/swagger-ui/"
 
                     currentBuild.displayName = "#${currentBuild.number} ${env.DEPLOY_NAMESPACE}"
                     currentBuild.description = """
                         <b>Developer URLs</b><br/>
                         <a href="${storefrontUrl}">Storefront</a>: ${storefrontUrl}<br/>
                         <a href="${backofficeUrl}">Backoffice</a>: ${backofficeUrl}<br/>
+                        <a href="${swaggerUrl}">Swagger UI</a>: ${swaggerUrl}<br/>
                         <a href="${apiExampleUrl}">API smoke test</a>
                     """.stripIndent().trim()
                 }
