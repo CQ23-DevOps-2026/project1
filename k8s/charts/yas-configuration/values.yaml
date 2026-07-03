@@ -49,7 +49,7 @@ applicationConfig:
 
   logging:
     pattern:
-      level: application=${spring.application.name} traceId=%X{traceId:-} spanId=%X{spanId:-} level=%level
+      level: application=${spring.application.name} traceId=%X{trace_id:-} spanId=%X{span_id:-} level=%level
 
   spring:
     lifecycle:
