@@ -1,0 +1,106 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        ansiColor('xterm')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    parameters {
+        string(name: 'TARGET_NAMESPACE', defaultValue: 'yas-developer', description: 'Developer namespace to destroy, for example: yas-developer or yas-dev-thang')
+    }
+
+    stages {
+        stage('Validate Namespace') {
+            steps {
+                script {
+                    def ns = params.TARGET_NAMESPACE?.trim()
+
+                    if (!ns) {
+                        error 'TARGET_NAMESPACE must not be empty'
+                    }
+
+                    if (!(ns == 'yas-developer' || ns.startsWith('yas-dev-'))) {
+                        error "Refusing to delete non-developer namespace: ${ns}"
+                    }
+
+                    def protectedNamespaces = [
+                        'default',
+                        'kube-system',
+                        'kube-public',
+                        'kube-node-lease',
+                        'argocd',
+                        'istio-system',
+                        'ingress-nginx',
+                        'cert-manager',
+                        'keycloak',
+                        'postgres',
+                        'redis',
+                        'kafka',
+                        'elasticsearch',
+                        'observability'
+                    ]
+
+                    if (protectedNamespaces.contains(ns)) {
+                        error "Refusing to delete protected namespace: ${ns}"
+                    }
+
+                    env.DELETE_NAMESPACE = ns
+                    currentBuild.displayName = "#${currentBuild.number} destroy ${ns}"
+                    currentBuild.description = "Destroy developer namespace: ${ns}"
+
+                    echo "Namespace approved for deletion: ${ns}"
+                }
+            }
+        }
+
+        stage('Show Resources Before Delete') {
+            steps {
+                sh '''
+                    set -eu
+                    echo "=== Namespace ==="
+                    kubectl get namespace "$DELETE_NAMESPACE" || true
+
+                    echo "=== Workloads ==="
+                    kubectl get all -n "$DELETE_NAMESPACE" || true
+
+                    echo "=== Ingress ==="
+                    kubectl get ingress -n "$DELETE_NAMESPACE" || true
+                '''
+            }
+        }
+
+        stage('Delete Namespace') {
+            steps {
+                sh '''
+                    set -eu
+                    echo "Deleting developer namespace: $DELETE_NAMESPACE"
+                    kubectl delete namespace "$DELETE_NAMESPACE" --ignore-not-found=true
+                '''
+            }
+        }
+
+        stage('Verify Cleanup') {
+            steps {
+                sh '''
+                    set -eu
+                    echo "Waiting for namespace deletion to complete..."
+                    for i in $(seq 1 60); do
+                      if ! kubectl get namespace "$DELETE_NAMESPACE" >/dev/null 2>&1; then
+                        echo "Namespace $DELETE_NAMESPACE has been deleted."
+                        exit 0
+                      fi
+                      echo "Namespace $DELETE_NAMESPACE is still terminating... ($i/60)"
+                      sleep 5
+                    done
+
+                    echo "Namespace $DELETE_NAMESPACE still exists after waiting. Current status:"
+                    kubectl get namespace "$DELETE_NAMESPACE" -o wide || true
+                    exit 1
+                '''
+            }
+        }
+    }
+}
