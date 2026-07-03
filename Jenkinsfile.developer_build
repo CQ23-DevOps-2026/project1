@@ -331,7 +331,6 @@ EOF
                     echo ""
                     echo "Example API through api-gateway:"
                     echo "http://$API_HOST:$API_NODE_PORT/api/product/storefront/products/featured?pageNo=0"
-                    echo "API Gateway: http://$API_HOST:$API_NODE_PORT"
                     echo "Swagger UI: http://$API_HOST:$API_NODE_PORT/swagger-ui/"
                 '''
 
@@ -348,7 +347,6 @@ EOF
                         <b>Developer URLs</b><br/>
                         <a href="${storefrontUrl}">Storefront</a>: ${storefrontUrl}<br/>
                         <a href="${backofficeUrl}">Backoffice</a>: ${backofficeUrl}<br/>
-                        <a href="${apiGatewayUrl}">API Gateway</a>: ${apiGatewayUrl}<br/>
                         <a href="${swaggerUrl}">Swagger UI</a>: ${swaggerUrl}<br/>
                         <a href="${apiExampleUrl}">API smoke test</a>
                     """.stripIndent().trim()
