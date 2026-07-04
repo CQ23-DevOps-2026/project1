@@ -32,10 +32,6 @@ def resolveImageTag(String service, String branch) {
     def normalized = normalizeBranch(branch)
     validateBranchName(normalized)
 
-    if (normalized == 'main') {
-        return 'main'
-    }
-
     def ref = "refs/heads/${normalized}"
 
     def shortSha = sh(
@@ -237,9 +233,10 @@ pipeline {
             steps {
                 sh '''
                     set -eu
+                    rm -f "${HOME}/.cache/helm/repository/stakater-index.yaml"
                     helm repo add stakater https://stakater.github.io/stakater-charts || true
                     helm repo update
-                    helm dependency build k8s/charts/yas-configuration
+                    helm dependency build k8s/charts/yas-configuration --skip-refresh
                     helm upgrade --install yas-configuration k8s/charts/yas-configuration \
                         --namespace "$DEPLOY_NAMESPACE" --create-namespace \
                         --set mediaApplicationConfig.yas.publicUrl="http://${STOREFRONT_HOST}:${STOREFRONT_NODE_PORT}/api/media"
@@ -275,7 +272,7 @@ pipeline {
                                 }
                                 def setArgs = helmSetArgs(item as Map, storefrontApiBasePath)
 
-                                sh "helm dependency build ${shellQuote(chartPath)}"
+                                sh "helm dependency build ${shellQuote(chartPath)} --skip-refresh"
                                 sh "helm upgrade --install ${shellQuote(release)} ${shellQuote(chartPath)} --namespace ${shellQuote(env.DEPLOY_NAMESPACE)} --create-namespace ${setArgs}"
                                 sh """
                                     set -euo pipefail
@@ -295,7 +292,7 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    helm dependency build k8s/charts/swagger-ui || true
+                    helm dependency build k8s/charts/swagger-ui --skip-refresh || true
 
                     cat > /tmp/swagger-ui-developer-values.yaml <<EOF
 urls: '[{"url":"/api/product/v3/api-docs","name":"Product"},

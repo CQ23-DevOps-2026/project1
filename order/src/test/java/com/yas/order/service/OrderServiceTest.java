@@ -224,6 +224,7 @@ class OrderServiceTest {
                 .build();
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
+        order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
 
         // Act
         orderService.updateOrderPaymentStatus(request);
