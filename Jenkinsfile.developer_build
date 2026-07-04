@@ -8,6 +8,12 @@ def deployNamespace() {
     return 'yas-developer'
 }
 
+def deployConcurrency() {
+    def raw = (params.DEPLOY_CONCURRENCY ?: '2').trim()
+    def value = raw.isInteger() ? raw.toInteger() : 2
+    return Math.max(1, Math.min(value, 3))
+}
+
 def shellQuote(String value) {
     return "'" + value.replace("'", "'\"'\"'") + "'"
 }
@@ -155,6 +161,7 @@ pipeline {
         string(name: 'STOREFRONT_NODE_PORT', defaultValue: '31080', description: 'NodePort for storefront-bff')
         string(name: 'BACKOFFICE_NODE_PORT', defaultValue: '31081', description: 'NodePort for backoffice-bff')
         string(name: 'API_NODE_PORT', defaultValue: '31082', description: 'NodePort for api-gateway')
+        choice(name: 'DEPLOY_CONCURRENCY', choices: ['2', '1', '3'], description: 'Number of application Helm releases to deploy in parallel')
 
         string(name: 'BACKOFFICE_BRANCH', defaultValue: 'main', description: 'Branch for backoffice image')
         string(name: 'BACKOFFICE_BFF_BRANCH', defaultValue: 'main', description: 'Branch for backoffice-bff image')
@@ -243,29 +250,42 @@ pipeline {
         stage('Deploy Applications') {
             steps {
                 script {
-                    deployPlan.each { item ->
-                        def chartPath = "k8s/charts/${item.chart}"
-                        def release = item.release as String
-                        def storefrontApiBasePath = ''
-                        if (item.id == 'storefront') {
-                            def storefrontBffClusterIp = sh(
-                                script: "kubectl get svc storefront-bff -n ${shellQuote(env.DEPLOY_NAMESPACE)} -o jsonpath='{.spec.clusterIP}'",
-                                returnStdout: true
-                            ).trim()
-                            if (!storefrontBffClusterIp) {
-                                error 'Cannot resolve storefront-bff ClusterIP for storefront SSR API_BASE_PATH'
-                            }
-                            storefrontApiBasePath = "http://${storefrontBffClusterIp}/api"
-                        }
-                        def setArgs = helmSetArgs(item as Map, storefrontApiBasePath)
+                    def concurrency = deployConcurrency()
+                    echo "=> Developer deploy concurrency: ${concurrency}"
 
-                        sh "helm dependency build ${shellQuote(chartPath)}"
-                        sh "helm upgrade --install ${shellQuote(release)} ${shellQuote(chartPath)} --namespace ${shellQuote(env.DEPLOY_NAMESPACE)} --create-namespace ${setArgs}"
-                        sh """
-                            set -euo pipefail
-                            echo "=> Waiting for rolling update of ${release} before continuing"
-                            kubectl rollout status deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s
-                        """
+                    deployPlan.collate(concurrency).eachWithIndex { batch, index ->
+                        echo "=> Developer deploy batch ${index + 1}: ${batch.collect { it.id }.join(', ')}"
+
+                        def branches = [:]
+                        batch.each { planItem ->
+                            def item = planItem
+                            branches["Deploy: ${item.id}"] = {
+                                def chartPath = "k8s/charts/${item.chart}"
+                                def release = item.release as String
+                                def storefrontApiBasePath = ''
+                                if (item.id == 'storefront') {
+                                    def storefrontBffClusterIp = sh(
+                                        script: "kubectl get svc storefront-bff -n ${shellQuote(env.DEPLOY_NAMESPACE)} -o jsonpath='{.spec.clusterIP}'",
+                                        returnStdout: true
+                                    ).trim()
+                                    if (!storefrontBffClusterIp) {
+                                        error 'Cannot resolve storefront-bff ClusterIP for storefront SSR API_BASE_PATH'
+                                    }
+                                    storefrontApiBasePath = "http://${storefrontBffClusterIp}/api"
+                                }
+                                def setArgs = helmSetArgs(item as Map, storefrontApiBasePath)
+
+                                sh "helm dependency build ${shellQuote(chartPath)}"
+                                sh "helm upgrade --install ${shellQuote(release)} ${shellQuote(chartPath)} --namespace ${shellQuote(env.DEPLOY_NAMESPACE)} --create-namespace ${setArgs}"
+                                sh """
+                                    set -euo pipefail
+                                    echo "=> Waiting for rolling update of ${release} before continuing"
+                                    kubectl rollout status deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s
+                                """
+                            }
+                        }
+
+                        parallel branches
                     }
                 }
             }
