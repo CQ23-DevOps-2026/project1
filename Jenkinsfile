@@ -101,6 +101,11 @@ def dockerImageNameForService(String service) {
     return "yas-${service}"
 }
 
+def getReleaseTag() {
+    def tagName = env.TAG_NAME ?: ''
+    return (tagName ==~ /^v\d+\.\d+\.\d+([-.][0-9A-Za-z.-]+)?$/) ? tagName : ''
+}
+
 def isMainBranch() {
     def branchName = env.BRANCH_NAME ?: ''
     def gitBranch = env.GIT_BRANCH ?: ''
@@ -123,6 +128,9 @@ pipeline {
         // - snyk-token: Snyk API token
         SNYK_TOKEN  = credentials('snyk-token')
         DOCKERHUB_NAMESPACE = 'vinny2707'
+        YAS_ARGOCD_REPO_URL = 'https://github.com/CQ23-DevOps-2026/yas-argocd.git'
+        YAS_ARGOCD_BRANCH = 'main'
+        YAS_ARGOCD_CREDENTIALS_ID = 'github-account'
     }
 
     options {
@@ -215,18 +223,32 @@ pipeline {
             steps {
                 script {
                     def services = getChangedServices()
+                    def releaseTag = getReleaseTag()
                     env.CHANGED_SERVICES = services.join(',')
-                    env.IMAGE_TAG = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
 
-                    if (isMainBranch()) {
+                    if (releaseTag) {
                         def imageServices = getAllDockerServices()
                         def mavenBuildServices = imageServices.findAll { fileExists("${it}/pom.xml") }
 
+                        env.IMAGE_TAG = releaseTag
+                        env.DEPLOY_ENVIRONMENT = 'staging'
+                        env.IMAGE_SERVICES = imageServices.join(',')
+                        env.MAVEN_BUILD_SERVICES = mavenBuildServices.join(',')
+
+                        echo "=> Release tag detected: all Docker images will be built with immutable tag ${env.IMAGE_TAG}."
+                    } else if (isMainBranch()) {
+                        def imageServices = getAllDockerServices()
+                        def mavenBuildServices = imageServices.findAll { fileExists("${it}/pom.xml") }
+
+                        env.IMAGE_TAG = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
+                        env.DEPLOY_ENVIRONMENT = 'dev'
                         env.IMAGE_SERVICES = imageServices.join(',')
                         env.MAVEN_BUILD_SERVICES = mavenBuildServices.join(',')
 
                         echo "=> Main branch detected: baseline Docker images will be built with immutable tag ${env.IMAGE_TAG}."
                     } else {
+                        env.IMAGE_TAG = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
+                        env.DEPLOY_ENVIRONMENT = ''
                         env.IMAGE_SERVICES = env.CHANGED_SERVICES
                         env.MAVEN_BUILD_SERVICES = env.CHANGED_SERVICES
                         echo "=> Feature branch detected: changed Docker images will be built with tag ${env.IMAGE_TAG}."
@@ -241,6 +263,7 @@ pipeline {
                     echo "=> Maven build services: ${env.MAVEN_BUILD_SERVICES ?: '<none>'}"
                     echo "=> Docker image services: ${env.IMAGE_SERVICES ?: '<none>'}"
                     echo "=> Docker image tag: ${env.IMAGE_TAG}"
+                    echo "=> GitOps target environment: ${env.DEPLOY_ENVIRONMENT ?: '<none>'}"
                 }
             }
         }
@@ -410,6 +433,84 @@ pipeline {
                         }
 
                         sh 'docker logout || true'
+                    }
+                }
+            }
+        }
+
+        // ==============================================================
+        // STAGE 4.6: Update GitOps desired state
+        // - main branch: promote commit SHA images to dev
+        // - release tags vX.Y.Z: promote release images to staging
+        // ==============================================================
+        stage('GitOps: Promote Image Tags') {
+            when {
+                expression {
+                    env.DEPLOY_ENVIRONMENT != null &&
+                    env.DEPLOY_ENVIRONMENT != '' &&
+                    env.IMAGE_SERVICES != null &&
+                    env.IMAGE_SERVICES != ''
+                }
+            }
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: env.YAS_ARGOCD_CREDENTIALS_ID,
+                        usernameVariable: 'GIT_USERNAME',
+                        passwordVariable: 'GIT_PASSWORD'
+                    )]) {
+                        sh '''
+                            set -euo pipefail
+
+                            rm -rf yas-argocd-work
+
+                            GIT_ASKPASS_SCRIPT="$(mktemp)"
+                            cat > "$GIT_ASKPASS_SCRIPT" <<'EOF'
+#!/bin/sh
+case "$1" in
+  *Username*) printf '%s\n' "$GIT_USERNAME" ;;
+  *Password*) printf '%s\n' "$GIT_PASSWORD" ;;
+esac
+EOF
+                            chmod +x "$GIT_ASKPASS_SCRIPT"
+                            export GIT_ASKPASS="$GIT_ASKPASS_SCRIPT"
+                            export GIT_TERMINAL_PROMPT=0
+
+                            git clone --branch "$YAS_ARGOCD_BRANCH" "$YAS_ARGOCD_REPO_URL" yas-argocd-work
+                            cd yas-argocd-work
+
+                            git config user.email "jenkins@local"
+                            git config user.name "jenkins"
+
+                            IFS=',' read -ra SERVICES <<< "$IMAGE_SERVICES"
+                            for svc in "${SERVICES[@]}"; do
+                              case "$svc" in
+                                backoffice) gitops_services=("backoffice-ui") ;;
+                                storefront) gitops_services=("storefront-ui") ;;
+                                storefront-bff) gitops_services=("storefront-bff" "api-gateway") ;;
+                                *) gitops_services=("$svc") ;;
+                              esac
+
+                              for gitops_svc in "${gitops_services[@]}"; do
+                                values_file="environments/${DEPLOY_ENVIRONMENT}/services/${gitops_svc}.yaml"
+                                if [ -f "$values_file" ]; then
+                                  sed -i -E "s/^([[:space:]]*tag:[[:space:]]*).*/\\1${IMAGE_TAG}/" "$values_file"
+                                  echo "=> ${DEPLOY_ENVIRONMENT}/${gitops_svc} -> ${IMAGE_TAG}"
+                                else
+                                  echo "=> Skip ${gitops_svc}: ${values_file} not found"
+                                fi
+                              done
+                            done
+
+                            if git diff --quiet; then
+                              echo "=> No GitOps changes to commit."
+                              exit 0
+                            fi
+
+                            git add "environments/${DEPLOY_ENVIRONMENT}/services"
+                            git commit -m "chore(${DEPLOY_ENVIRONMENT}): promote YAS images to ${IMAGE_TAG}"
+                            git push origin "$YAS_ARGOCD_BRANCH"
+                        '''
                     }
                 }
             }
