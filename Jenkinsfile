@@ -460,11 +460,12 @@ pipeline {
                         passwordVariable: 'GIT_PASSWORD'
                     )]) {
                         sh '''
-                            set -euo pipefail
+                            set -eu
 
                             rm -rf yas-argocd-work
 
                             GIT_ASKPASS_SCRIPT="$(mktemp)"
+                            trap 'rm -f "$GIT_ASKPASS_SCRIPT"' EXIT
                             cat > "$GIT_ASKPASS_SCRIPT" <<'EOF'
 #!/bin/sh
 case "$1" in
@@ -482,15 +483,14 @@ EOF
                             git config user.email "jenkins@local"
                             git config user.name "jenkins"
 
-                            IFS=',' read -ra SERVICES <<< "$IMAGE_SERVICES"
-                            for svc in "${SERVICES[@]}"; do
+                            for svc in $(echo "$IMAGE_SERVICES" | tr ',' ' '); do
                               case "$svc" in
-                                backoffice) gitops_services=("backoffice-ui") ;;
-                                storefront) gitops_services=("storefront-ui") ;;
-                                *) gitops_services=("$svc") ;;
+                                backoffice) gitops_services="backoffice-ui" ;;
+                                storefront) gitops_services="storefront-ui" ;;
+                                *) gitops_services="$svc" ;;
                               esac
 
-                              for gitops_svc in "${gitops_services[@]}"; do
+                              for gitops_svc in $gitops_services; do
                                 values_file="environments/${DEPLOY_ENVIRONMENT}/services/${gitops_svc}.yaml"
                                 if [ -f "$values_file" ]; then
                                   sed -i -E "s/^([[:space:]]*tag:[[:space:]]*).*/\\1${IMAGE_TAG}/" "$values_file"
