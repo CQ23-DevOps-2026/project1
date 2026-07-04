@@ -42,6 +42,11 @@ def getChangedServices() {
         ? gitDiffOutput.split('\n').toList()
         : getAffectedPaths()
 
+    if (hasSharedBackendChanges(paths)) {
+        echo '=> Shared backend files changed; all Maven backend images will be rebuilt.'
+        return getAllMavenImageServices()
+    }
+
     def changedServices = [] as Set
     for (folder in extractUniqueFolders(paths)) {
         if (fileExists("${folder}/pom.xml")) {
@@ -59,6 +64,31 @@ def getAllDockerServices() {
     ).trim()
 
     return output ? output.split('\n').toList() : []
+}
+
+@com.cloudbees.groovy.cps.NonCPS
+def hasSharedBackendChanges(List paths) {
+    def sharedExactPaths = [
+        'pom.xml',
+        'mvnw',
+        'mvnw.cmd'
+    ] as Set
+
+    for (path in paths) {
+        if (sharedExactPaths.contains(path)) {
+            return true
+        }
+        if (path.startsWith('.mvn/') || path.startsWith('common-library/')) {
+            return true
+        }
+    }
+    return false
+}
+
+def getAllMavenImageServices() {
+    return getAllDockerServices()
+        .findAll { fileExists("${it}/pom.xml") }
+        .sort()
 }
 
 def dockerImageNameForService(String service) {
