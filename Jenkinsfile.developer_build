@@ -93,7 +93,7 @@ def buildDeployPlan() {
     return plan
 }
 
-def helmSetArgs(Map item, String storefrontApiBasePath = '', boolean holdReplicasAtZero = false) {
+def helmSetArgs(Map item, String storefrontApiBasePath = '') {
     def root = item.root
     def imageRef = item.imageRef as String
     def repository = imageRef.substring(0, imageRef.lastIndexOf(':'))
@@ -104,10 +104,6 @@ def helmSetArgs(Map item, String storefrontApiBasePath = '', boolean holdReplica
         "--set ${root}.image.tag=${tag}",
         "--set ${root}.image.pullPolicy=Always"
     ]
-
-    if (holdReplicasAtZero) {
-        args << "--set ${root}.replicaCount=0"
-    }
 
     if (item.id == 'storefront') {
         args << "--set ${root}.ingress.enabled=false"
@@ -261,22 +257,13 @@ pipeline {
                             }
                             storefrontApiBasePath = "http://${storefrontBffClusterIp}/api"
                         }
-                        def setArgs = helmSetArgs(item as Map, storefrontApiBasePath, true)
+                        def setArgs = helmSetArgs(item as Map, storefrontApiBasePath)
 
-                        sh """
-                            set -euo pipefail
-                            if kubectl get deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} >/dev/null 2>&1; then
-                                echo "=> Scaling ${release} down before upgrade"
-                                kubectl scale deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --replicas=0
-                                kubectl rollout status deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=180s
-                            fi
-                        """
                         sh "helm dependency build ${shellQuote(chartPath)}"
                         sh "helm upgrade --install ${shellQuote(release)} ${shellQuote(chartPath)} --namespace ${shellQuote(env.DEPLOY_NAMESPACE)} --create-namespace ${setArgs}"
                         sh """
                             set -euo pipefail
-                            echo "=> Scaling ${release} up and waiting for it before continuing"
-                            kubectl scale deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --replicas=1
+                            echo "=> Waiting for rolling update of ${release} before continuing"
                             kubectl rollout status deployment/${shellQuote(release)} -n ${shellQuote(env.DEPLOY_NAMESPACE)} --timeout=360s
                         """
                     }
