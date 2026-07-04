@@ -216,6 +216,7 @@ pipeline {
                 script {
                     def services = getChangedServices()
                     env.CHANGED_SERVICES = services.join(',')
+                    env.IMAGE_TAG = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
 
                     if (isMainBranch()) {
                         def imageServices = getAllDockerServices()
@@ -223,13 +224,11 @@ pipeline {
 
                         env.IMAGE_SERVICES = imageServices.join(',')
                         env.MAVEN_BUILD_SERVICES = mavenBuildServices.join(',')
-                        env.IMAGE_TAG = 'main'
 
-                        echo '=> Main branch detected: baseline Docker images will be built with tag main.'
+                        echo "=> Main branch detected: baseline Docker images will be built with immutable tag ${env.IMAGE_TAG}."
                     } else {
                         env.IMAGE_SERVICES = env.CHANGED_SERVICES
                         env.MAVEN_BUILD_SERVICES = env.CHANGED_SERVICES
-                        env.IMAGE_TAG = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
                         echo "=> Feature branch detected: changed Docker images will be built with tag ${env.IMAGE_TAG}."
                     }
 
