@@ -487,7 +487,6 @@ EOF
                               case "$svc" in
                                 backoffice) gitops_services=("backoffice-ui") ;;
                                 storefront) gitops_services=("storefront-ui") ;;
-                                storefront-bff) gitops_services=("storefront-bff" "api-gateway") ;;
                                 *) gitops_services=("$svc") ;;
                               esac
 
