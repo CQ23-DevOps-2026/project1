@@ -87,7 +87,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum (\r\n  increase (\r\n    http_server_request_duration_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)",
+          "expr": "sum (\r\n  increase (\r\n    http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)",
           "instant": true,
           "range": false,
           "refId": "A"
@@ -246,9 +246,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (http_response_status_code) (\r\n  label_replace (\r\n    increase (\r\n      http_server_request_duration_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n    ),\r\n    \"http_response_status_code\",\r\n    \"Unknown\",\r\n    \"http_response_status_code\",\r\n    \"\"\r\n  )\r\n)",
+          "expr": "sum by (status) (\r\n  label_replace (\r\n    increase (\r\n      http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n    ),\r\n    \"status\",\r\n    \"Unknown\",\r\n    \"status\",\r\n    \"\"\r\n  )\r\n)",
           "instant": true,
-          "legendFormat": "{{http_response_status_code}}",
+          "legendFormat": "{{status}}",
           "range": false,
           "refId": "A"
         }
@@ -340,9 +340,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (http_route, http_request_method) (\r\n  rate (\r\n    http_server_request_duration_seconds_count{namespace=\"$namespace\", service=\"$service\"}[5m]\r\n  )\r\n)",
+          "expr": "sum by (uri, method) (\r\n  rate (\r\n    http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\"}[5m]\r\n  )\r\n)",
           "instant": false,
-          "legendFormat": "{{http_request_method}} {{http_route}}",
+          "legendFormat": "{{method}} {{uri}}",
           "range": true,
           "refId": "A"
         }
@@ -438,7 +438,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (http_route, http_request_method) (\r\n  increase(\r\n    http_server_request_duration_seconds_count{\r\n      namespace=\"$namespace\", service=\"$service\", \r\n      http_response_status_code=~\"2..|3..\"\r\n    }[$__range]\r\n  )\r\n)",
+          "expr": "sum by (uri, method) (\r\n  increase(\r\n    http_server_requests_seconds_count{\r\n      namespace=\"$namespace\", service=\"$service\", \r\n      status=~\"2..|3..\"\r\n    }[$__range]\r\n  )\r\n)",
           "format": "table",
           "instant": true,
           "range": false,
@@ -451,7 +451,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (http_route, http_request_method) (\r\n  increase(\r\n    http_server_request_duration_seconds_count{\r\n      namespace=\"$namespace\", service=\"$service\", \r\n      http_response_status_code=~\"4..|5..\"\r\n    }[$__range]\r\n  )\r\n)",
+          "expr": "sum by (uri, method) (\r\n  increase(\r\n    http_server_requests_seconds_count{\r\n      namespace=\"$namespace\", service=\"$service\", \r\n      status=~\"4..|5..\"\r\n    }[$__range]\r\n  )\r\n)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -545,9 +545,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (http_route, http_request_method) (\r\n  increase (\r\n    http_server_request_duration_seconds_sum{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)\r\n/\r\nsum by (http_route, http_request_method) (\r\n  increase (\r\n    http_server_request_duration_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)",
+          "expr": "sum by (uri, method) (\r\n  increase (\r\n    http_server_requests_seconds_sum{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)\r\n/\r\nsum by (uri, method) (\r\n  increase (\r\n    http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\"}[$__range]\r\n  )\r\n)",
           "instant": false,
-          "legendFormat": "{{http_request_method}} {{http_route}}",
+          "legendFormat": "{{method}} {{uri}}",
           "range": true,
           "refId": "A"
         }
@@ -620,7 +620,7 @@
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "jvm_class_count{namespace=\"$namespace\", service=\"$service\"}",
+              "expr": "jvm_classes_loaded_classes{namespace=\"$namespace\", service=\"$service\"}",
               "instant": false,
               "range": true,
               "refId": "A"
@@ -684,7 +684,7 @@
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "jvm_class_loaded_total{namespace=\"$namespace\", service=\"$service\"}",
+              "expr": "jvm_classes_loaded_classes{namespace=\"$namespace\", service=\"$service\"}",
               "instant": false,
               "range": true,
               "refId": "A"
@@ -1348,7 +1348,7 @@
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(service) (rate(jvm_thread_count{namespace=\"$namespace\", service=\"$service\"}[5m]))",
+              "expr": "sum by(service) (rate(jvm_threads_live_threads{namespace=\"$namespace\", service=\"$service\"}[5m]))",
               "instant": false,
               "range": true,
               "refId": "A"
@@ -1534,7 +1534,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_class_loaded_total{namespace=\"$namespace\", service=\"$service\"}",
+          "expr": "jvm_classes_loaded_classes{namespace=\"$namespace\", service=\"$service\"}",
           "hide": false,
           "instant": false,
           "range": true,
@@ -2213,7 +2213,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by(service) (jvm_memory_limit_bytes{namespace=\"$namespace\", service=\"$service\"}) / 1048576",
+          "expr": "sum by(service) (jvm_memory_max_bytes{namespace=\"$namespace\", service=\"$service\"}) / 1048576",
           "instant": false,
           "range": true,
           "refId": "A"
