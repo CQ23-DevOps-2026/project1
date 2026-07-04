@@ -13,3 +13,4 @@ spec:
     adminUser:
       name: prometheus-grafana    # Đổi sang Secret thực tế của Grafana
       key: admin-user            # Đổi key sang admin-user
+      
