@@ -77,11 +77,25 @@ def isMainBranch() {
     return branchName == 'main' || gitBranch == 'main' || gitBranch == 'origin/main'
 }
 
+def dockerBuildConcurrency() {
+    def raw = (params.DOCKER_BUILD_CONCURRENCY ?: '2').trim()
+    def value = raw.isInteger() ? raw.toInteger() : 2
+    return Math.max(1, Math.min(value, 3))
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PIPELINE
 // ─────────────────────────────────────────────────────────────────────────────
 pipeline {
     agent any
+
+    parameters {
+        choice(
+            name: 'DOCKER_BUILD_CONCURRENCY',
+            choices: ['2', '1', '3'],
+            description: 'Number of Docker image builds to run in parallel'
+        )
+    }
 
     tools {
         maven 'Maven3'
@@ -368,16 +382,29 @@ pipeline {
                             echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                         '''
 
-                        for (svc in services) {
-                            def imageName = dockerImageNameForService(svc)
-                            def fullImage = "${env.DOCKERHUB_NAMESPACE}/${imageName}:${env.IMAGE_TAG}"
+                        def concurrency = dockerBuildConcurrency()
+                        echo "=> Docker build concurrency: ${concurrency}"
 
-                            sh """
-                                set -euo pipefail
-                                echo "=> Building ${fullImage}"
-                                docker build -t '${fullImage}' './${svc}'
-                                docker push '${fullImage}'
-                            """
+                        services.collate(concurrency).eachWithIndex { batch, index ->
+                            echo "=> Docker build batch ${index + 1}: ${batch.join(', ')}"
+
+                            def branches = [:]
+                            batch.each { svc ->
+                                def service = svc
+                                branches["Docker: ${service}"] = {
+                                    def imageName = dockerImageNameForService(service)
+                                    def fullImage = "${env.DOCKERHUB_NAMESPACE}/${imageName}:${env.IMAGE_TAG}"
+
+                                    sh """
+                                        set -euo pipefail
+                                        echo "=> Building ${fullImage}"
+                                        docker build -t '${fullImage}' './${service}'
+                                        docker push '${fullImage}'
+                                    """
+                                }
+                            }
+
+                            parallel branches
                         }
 
                         sh 'docker logout || true'
