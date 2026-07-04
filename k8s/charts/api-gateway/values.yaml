@@ -3,16 +3,16 @@ backend:
     repository: ghcr.io/nashtech-garage/yas-storefront-bff
     tag: latest
 
-  nameOverride: storefront-bff
-  fullnameOverride: storefront-bff
+  nameOverride: api-gateway
+  fullnameOverride: api-gateway
 
   deployment:
     annotations:
       configmap.reloader.stakater.com/reload: "yas-gateway-routes-config-configmap,storefront-bff-extra-configmap"
 
   ingress:
-    enabled: true
-    host: storefront.yas.local.com
+    enabled: false
+    host: api.yas.local.com
     path: /
 
   extraEnvs:
