@@ -32,10 +32,6 @@ def resolveImageTag(String service, String branch) {
     def normalized = normalizeBranch(branch)
     validateBranchName(normalized)
 
-    if (normalized == 'main') {
-        return 'main'
-    }
-
     def ref = "refs/heads/${normalized}"
 
     def shortSha = sh(
