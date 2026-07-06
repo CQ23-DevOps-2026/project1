@@ -2433,10 +2433,9 @@
       },
       {
         "current": {
-          "isNone": true,
-          "selected": false,
+          "selected": true,
           "text": "None",
-          "value": ""
+          "value": ".*"
         },
         "datasource": {
           "type": "prometheus",
@@ -2444,11 +2443,17 @@
         },
         "definition": "label_values(jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\", area=\"heap\"}, id)",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "JVM Memory Pools Heap",
         "multi": false,
         "name": "jvm_memory_pool_heap",
-        "options": [],
+        "options": [
+          {
+            "selected": true,
+            "text": "None",
+            "value": ".*"
+          }
+        ],
         "query": {
           "query": "label_values(jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\", area=\"heap\"}, id)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
@@ -2457,14 +2462,14 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       },
       {
         "current": {
-          "isNone": true,
-          "selected": false,
+          "selected": true,
           "text": "None",
-          "value": ""
+          "value": ".*"
         },
         "datasource": {
           "type": "prometheus",
@@ -2472,11 +2477,17 @@
         },
         "definition": "label_values(jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\", area=\"nonheap\"}, id)",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "JVM Memory Pools Non-Heap",
         "multi": false,
         "name": "jvm_memory_pool_nonheap",
-        "options": [],
+        "options": [
+          {
+            "selected": true,
+            "text": "None",
+            "value": ".*"
+          }
+        ],
         "query": {
           "query": "label_values(jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\", area=\"nonheap\"}, id)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
@@ -2485,14 +2496,14 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       },
       {
         "current": {
-          "isNone": true,
-          "selected": false,
+          "selected": true,
           "text": "None",
-          "value": ""
+          "value": ".*"
         },
         "datasource": {
           "type": "prometheus",
@@ -2500,11 +2511,17 @@
         },
         "definition": "label_values(jvm_buffer_memory_used_bytes{namespace=\"$namespace\", service=\"$service\"}, id)",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "JVM Buffer Pool",
         "multi": false,
         "name": "jvm_buffer_pool",
-        "options": [],
+        "options": [
+          {
+            "selected": true,
+            "text": "None",
+            "value": ".*"
+          }
+        ],
         "query": {
           "query": "label_values(jvm_buffer_memory_used_bytes{namespace=\"$namespace\", service=\"$service\"}, id)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
@@ -2513,7 +2530,8 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       }
     ]
   },
