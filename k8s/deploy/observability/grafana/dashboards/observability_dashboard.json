@@ -414,8 +414,8 @@
           },
           "editorMode": "code",
           "expr": "max by(service) (jvm_classes_loaded_classes{namespace=\"$namespace\", service=\"$service\"})",
-          "instant": true,
-          "range": false,
+          "instant": false,
+          "range": true,
           "refId": "A",
           "legendFormat": "{{service}}"
         }
@@ -479,8 +479,8 @@
           },
           "editorMode": "code",
           "expr": "max by(service) (jvm_classes_loaded_count_classes_total{namespace=\"$namespace\", service=\"$service\"})",
-          "instant": true,
-          "range": false,
+          "instant": false,
+          "range": true,
           "refId": "A",
           "legendFormat": "{{service}}"
         }
@@ -524,7 +524,7 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -558,8 +558,8 @@
           },
           "editorMode": "code",
           "expr": "max by(service) ((time() - process_start_time_seconds{namespace=\"$namespace\", service=\"$service\"}) * 1000)",
-          "instant": true,
-          "range": false,
+          "instant": false,
+          "range": true,
           "refId": "A",
           "legendFormat": "{{service}}"
         }
@@ -624,8 +624,8 @@
           },
           "editorMode": "code",
           "expr": "max by(service) (process_open_fds{namespace=\"$namespace\", service=\"$service\"} or process_files_open_files{namespace=\"$namespace\", service=\"$service\"})",
-          "instant": true,
-          "range": false,
+          "instant": false,
+          "range": true,
           "refId": "A",
           "legendFormat": "{{service}}"
         }
