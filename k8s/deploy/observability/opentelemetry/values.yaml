@@ -41,4 +41,4 @@ opentelemetryCollectorConfig:
 
 serviceAccount:
   create: true
-  name: ""
+  name: opentelemetry-k8sattributes
