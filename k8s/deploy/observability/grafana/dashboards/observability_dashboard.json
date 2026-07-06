@@ -336,8 +336,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(sum(rate(http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\", status=~\"4..|5..\"}[5m])) or vector(0)) / clamp_min((sum(rate(http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\", status=~\"2..|3..\"}[5m])) or vector(0)), 1)",
-          "format": "time_series",
+          "expr": "(sum(rate(http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\", status=~\"4..|5..\"}[5m])) or on() vector(0)) / clamp_min((sum(rate(http_server_requests_seconds_count{namespace=\"$namespace\", service=\"$service\", status=~\"2..|3..\"}[5m])) or on() vector(0)), 1)",
           "instant": false,
           "range": true,
           "refId": "A",
@@ -345,28 +344,6 @@
         }
       ],
       "title": "Total Error Requests/ Total Successful Requests",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "Value": "Total Success Requests",
-              "Value #A": "Successes",
-              "Value #B": "Failures",
-              "http_request_method": "Method",
-              "http_route": "Route"
-            }
-          }
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -756,7 +733,7 @@
           "instant": false,
           "range": true,
           "refId": "B",
-          "legendFormat": "{{id}} used"
+          "legendFormat": "jvm_memory_used_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         },
         {
           "datasource": {
@@ -768,7 +745,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{id}} committed"
+          "legendFormat": "jvm_memory_committed_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         },
         {
           "datasource": {
@@ -781,7 +758,7 @@
           "instant": false,
           "range": true,
           "refId": "C",
-          "legendFormat": "{{id}} max"
+          "legendFormat": "jvm_memory_max_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         }
       ],
       "title": "JVM Memory Pool(Heap)",
@@ -875,7 +852,7 @@
           "instant": false,
           "range": true,
           "refId": "B",
-          "legendFormat": "{{id}} used"
+          "legendFormat": "jvm_memory_used_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         },
         {
           "datasource": {
@@ -887,7 +864,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{id}} committed"
+          "legendFormat": "jvm_memory_committed_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         },
         {
           "datasource": {
@@ -900,7 +877,7 @@
           "instant": false,
           "range": true,
           "refId": "C",
-          "legendFormat": "{{id}} max"
+          "legendFormat": "jvm_memory_max_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         }
       ],
       "title": "JVM Memory Pool(Non-Heap)",
@@ -992,7 +969,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{action}} {{cause}}"
+          "legendFormat": "jvm_gc_pause_seconds_sum{service=\"{{service}}\", action=\"{{action}}\", cause=\"{{cause}}\"}"
         }
       ],
       "title": "JVM Duration Rate",
@@ -1085,7 +1062,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{id}} used"
+          "legendFormat": "jvm_buffer_memory_used_bytes{service=\"{{service}}\", id=\"{{id}}\"}"
         }
       ],
       "title": "Buffer Pool",
@@ -1269,7 +1246,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{action}} {{cause}}"
+          "legendFormat": "jvm_gc_pause_seconds_sum{service=\"{{service}}\", action=\"{{action}}\", cause=\"{{cause}}\"}"
         }
       ],
       "title": "Total Time For Garbage Collection Per Service",
@@ -1770,7 +1747,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}}"
+          "legendFormat": "jvm_gc_live_data_size_bytes{service=\"{{service}}\"}"
         }
       ],
       "title": "Memory Used After Last Garbage Collection",
@@ -2126,7 +2103,7 @@
           "expr": "(process_resident_memory_bytes{namespace=\"$namespace\", service=\"$service\"} or sum by(service) (jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\"})) / 1048576",
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}}",
+          "legendFormat": "process_resident_memory_bytes{service=\"{{service}}\"}",
           "instant": false
         }
       ],
@@ -2232,7 +2209,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{name}}{{pool}}"
+          "legendFormat": "{{__name__}}{service=\"{{service}}\", name=\"{{name}}\", pool=\"{{pool}}\"}"
         }
       ],
       "title": "Max Connection Allowed",
@@ -2337,7 +2314,7 @@
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{pool}}"
+          "legendFormat": "{{__name__}}{service=\"{{service}}\", name=\"{{name}}\", pool=\"{{pool}}\"}"
         }
       ],
       "title": "Number Of Connection In Use",
