@@ -1584,7 +1584,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(process_cpu_seconds_total{namespace=\"$namespace\", service=\"$service\"}[5m]))",
+          "expr": "avg_over_time(process_cpu_usage{namespace=\"$namespace\", service=\"$service\"}[5m])",
           "instant": false,
           "range": true,
           "refId": "A",
@@ -1677,7 +1677,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "topk(5, rate(process_cpu_seconds_total{namespace=\"$namespace\"}[5m]))",
+          "expr": "topk(5, process_cpu_usage{namespace=\"$namespace\"})",
           "instant": false,
           "range": true,
           "refId": "A",
@@ -2128,7 +2128,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(process_resident_memory_bytes{namespace=\"$namespace\", service=\"$service\"}[5m]) / 1048576",
+          "expr": "(process_resident_memory_bytes{namespace=\"$namespace\", service=\"$service\"} or sum by(service) (jvm_memory_used_bytes{namespace=\"$namespace\", service=\"$service\"})) / 1048576",
           "range": true,
           "refId": "A",
           "legendFormat": "{{service}}",
@@ -2233,11 +2233,11 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "jdbc_connections_max{namespace=\"$namespace\", service=\"$service\"} or hikaricp_connections_max{namespace=\"$namespace\", service=\"$service\"}",
+          "expr": "jdbc_connections_max{namespace=\"$namespace\"} or hikaricp_connections_max{namespace=\"$namespace\"}",
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{name}}"
+          "legendFormat": "{{service}} {{name}}{{pool}}"
         }
       ],
       "title": "Max Connection Allowed",
@@ -2338,11 +2338,11 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jdbc_connections_active{namespace=\"$namespace\", service=\"$service\"} or hikaricp_connections_active{namespace=\"$namespace\", service=\"$service\"}",
+          "expr": "jdbc_connections_active{namespace=\"$namespace\"} or hikaricp_connections_active{namespace=\"$namespace\"}",
           "instant": false,
           "range": true,
           "refId": "A",
-          "legendFormat": "{{service}} {{name}}"
+          "legendFormat": "{{service}} {{name}}{{pool}}"
         }
       ],
       "title": "Number Of Connection In Use",
