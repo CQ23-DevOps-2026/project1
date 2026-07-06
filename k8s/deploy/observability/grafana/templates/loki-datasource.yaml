@@ -18,6 +18,6 @@ data:
           maxLines: 1000
           derivedFields:
             - datasourceUid: tempo
-              matcherRegex: traceId=([A-Fa-f0-9]{16,32})
+              matcherRegex: '(?:traceId=|trace_id=|"trace_id":"|"traceId":")([A-Fa-f0-9]{16,32})'
               name: traceId
-              url: ${__value.raw}
+              url: '$${__value.raw}'

@@ -4,5 +4,6 @@ metadata:
   name: opentelemetry
 spec:
   mode: deployment
+  serviceAccount: {{ include "opentelemetry.serviceAccountName" . }}
   config:
     {{ toYaml .Values.opentelemetryCollectorConfig | nindent 4 }}

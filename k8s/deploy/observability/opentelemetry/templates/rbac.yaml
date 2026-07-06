@@ -1,0 +1,30 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "opentelemetry.fullname" . }}-k8sattributes
+  labels:
+    {{- include "opentelemetry.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "deployments"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "opentelemetry.fullname" . }}-k8sattributes
+  labels:
+    {{- include "opentelemetry.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "opentelemetry.fullname" . }}-k8sattributes
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "opentelemetry.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
