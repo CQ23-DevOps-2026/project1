@@ -1,27 +1,18 @@
-# Báo cáo khắc phục lỗi triển khai hệ thống YAS
-
-**Hệ thống:** YAS (Yet Another Shop)  
-**Môi trường:** Kubernetes K3s trên máy chủ `yas-server`  
-**Ngày thực hiện:** 24/06/2026  
-**Nhánh làm việc:** `fix/deploy-local-setup`
-
-## 1. Mục tiêu và phạm vi
-
 Tài liệu này tổng hợp quá trình kiểm tra, debug và khắc phục các lỗi phát sinh khi triển khai YAS trên môi trường Kubernetes K3s. Nội dung bao gồm công việc ban đầu do Antigravity thực hiện và phần tiếp tục kiểm tra, hoàn thiện sau đó.
 
 Báo cáo được lập dựa trên 9 commit đã tạo trên `yas-server`:
 
-| Commit | Nội dung |
-|---|---|
+| Commit     | Nội dung                                                         |
+| ---------- | ---------------------------------------------------------------- |
 | `16b50a46` | Build `payment-paypal` thành Spring Boot service có thể thực thi |
-| `d491bb10` | Ổn định luồng đăng nhập OAuth2 của hai BFF |
-| `bdc38a29` | Công khai đầy đủ các route tài liệu API |
-| `4951c2b5` | Sửa security matcher của Cart |
-| `1d1062c9` | Giữ cấu hình OAuth2 cho profile dev của Storefront BFF |
-| `fff1272c` | Sửa sai tên cột trong Liquibase migration của Payment |
-| `543bfee8` | Điều chỉnh health probe cho các backend khởi động chậm |
-| `d25a3131` | Đồng bộ phiên bản Elasticsearch và Kibana |
-| `d8806ed8` | Sửa cấu hình triển khai Grafana/Prometheus |
+| `d491bb10` | Ổn định luồng đăng nhập OAuth2 của hai BFF                       |
+| `bdc38a29` | Công khai đầy đủ các route tài liệu API                          |
+| `4951c2b5` | Sửa security matcher của Cart                                    |
+| `1d1062c9` | Giữ cấu hình OAuth2 cho profile dev của Storefront BFF           |
+| `fff1272c` | Sửa sai tên cột trong Liquibase migration của Payment            |
+| `543bfee8` | Điều chỉnh health probe cho các backend khởi động chậm           |
+| `d25a3131` | Đồng bộ phiên bản Elasticsearch và Kibana                        |
+| `d8806ed8` | Sửa cấu hình triển khai Grafana/Prometheus                       |
 
 ## 2. Tóm tắt kết quả
 
@@ -42,43 +33,7 @@ Sau khi sửa, các thành phần liên quan đã build/test thành công; Cart 
 
 ## 3. Chi tiết các lỗi và cách khắc phục
 
-### 3.1. Payment PayPal không phải executable Spring Boot service
-
-**Commit:** `16b50a46`
-
-**Hiện tượng**
-
-Pod `payment-paypal` không thể khởi động đúng như một Spring Boot application. Module thiếu lớp main và cấu hình build cần thiết để tạo executable JAR.
-
-**Nguyên nhân**
-
-- Chưa có `PaymentPaypalApplication`.
-- Maven chưa chạy Spring Boot repackage cho module.
-- Chưa có security filter chain tối thiểu cho resource server và các endpoint health/Swagger.
-
-**Khắc phục**
-
-- Thêm lớp main sử dụng `@SpringBootApplication`.
-- Thêm `spring-boot-maven-plugin` vào `payment-paypal/pom.xml`.
-- Thêm `SecurityConfig`, cho phép health check và Swagger; các endpoint còn lại yêu cầu xác thực JWT.
-
-**Kiểm chứng**
-
-- Maven build thành công.
-- 10 test của PayPal và 7 test của common library đều pass.
-- Image local đã được build/import vào K3s và service có thể khởi động.
-
-### 3.2. Liquibase migration của Payment dùng sai tên cột
-
-**Commit:** `fff1272c`
-
-**Hiện tượng**
-
-Pod `payment` rơi vào `CrashLoopBackOff` khi Liquibase áp dụng dữ liệu provider.
-
-**Nguyên nhân**
-
-Hai changelog sử dụng cột `is_enabled`, trong khi DDL thực tế định nghĩa cột `enabled`.
+enabled`, trong khi DDL thực tế định nghĩa cột `enabled`.
 
 **Khắc phục**
 
@@ -107,24 +62,6 @@ Trong quá trình debug đã lần lượt xuất hiện các lỗi:
 **Nguyên nhân**
 
 Luồng OAuth2 có hai đối tượng truy cập khác nhau:
-
-- Trình duyệt cần dùng domain HTTPS công khai.
-- Pod trong cluster nên dùng Kubernetes service nội bộ.
-
-Việc dùng chung một URL issuer cho cả hai hướng gây ra vấn đề hairpin NAT, chứng chỉ self-signed và URL redirect sai giao thức. Ngoài ra, registration ID và callback giữa frontend, BFF và Keycloak chưa đồng nhất.
-
-**Khắc phục**
-
-Áp dụng cấu hình split-horizon:
-
-- Authorization endpoint cho trình duyệt dùng `https://identity.yas.local.com`.
-- Token, JWK và user-info endpoint cho BFF dùng Keycloak service nội bộ qua HTTP.
-- Chuẩn hóa registration ID thành `api-client`.
-- Khai báo rõ `authorization-grant-type: authorization_code`.
-- Chuẩn hóa callback thành `{baseUrl}/login/oauth2/code/{registrationId}`.
-- Cập nhật Keycloak hostname và backchannel phù hợp với ingress.
-- Ép các ingress liên quan chuyển hướng sang HTTPS.
-- Cập nhật URL đăng nhập của Storefront UI cho đúng registration.
 
 **Kết quả**
 
