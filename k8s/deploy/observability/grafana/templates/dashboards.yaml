@@ -22,5 +22,5 @@ spec:
   url: "https://grafana.com/api/dashboards/6083/revisions/5/download"
   datasources:
     - datasourceName: prometheus
-      inputName: DS_PROMETHEUS
+      inputName: DS_PROMETHEUS # test ci
 # trash commit
