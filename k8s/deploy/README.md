@@ -94,4 +94,4 @@ On the left menu select `Expore` -> select `Loki` datasource -> select Label fil
 - namespace
 - container (Application)
 
-On the Loki also support track by traceId, on The Tempo you can select the Node graph to view the tracing of request 
+On the Loki also support track by traceId, on The Tempo you can select the Node graph to view the tracing of request or Kiali for the graph of request between services.

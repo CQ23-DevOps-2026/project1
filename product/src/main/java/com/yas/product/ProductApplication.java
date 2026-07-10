@@ -17,3 +17,4 @@ public class ProductApplication {
 }
 
 //Test
+//Test Detect service.
