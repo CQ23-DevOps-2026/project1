@@ -207,7 +207,7 @@ pipeline {
                     // Requires Jenkins plugin: Warnings Next Generation (Warnings NG)
                     // Shows results in "SARIF Warnings" UI.
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        recordIssues(tools: [sarif(pattern: 'gitleaks.sarif')])
+                        recordIssues(tools: [sarif(pattern: 'gitleaks.sarif', id: 'gitleaks', name: 'Gitleaks Secrets')])
                     }
                 }
             }
@@ -570,7 +570,7 @@ EOF
                     // Requires Jenkins plugin: Warnings Next Generation (Warnings NG)
                     // Shows results in "SARIF Warnings" UI.
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        recordIssues(tools: [sarif(pattern: 'snyk.sarif')])
+                        recordIssues(tools: [sarif(pattern: 'snyk.sarif', id: 'snyk', name: 'Snyk Dependency Scan')])
                     }
                 }
             }
